@@ -1,0 +1,318 @@
+"use client";
+
+import Link from "next/link";
+import { FormEvent, ReactNode, useMemo, useState } from "react";
+import { tools, type Tool } from "../../tools";
+
+const won = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
+const number = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 2 });
+
+function parseNumber(value: string) {
+  return Number(value.replaceAll(",", "")) || 0;
+}
+
+function currency(value: number) {
+  return `${won.format(Math.max(0, Math.round(value / 10) * 10))}원`;
+}
+
+function Field({
+  label, value, onChange, suffix, type = "text", placeholder, min,
+}: {
+  label: string; value: string; onChange: (value: string) => void; suffix?: string;
+  type?: string; placeholder?: string; min?: string;
+}) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <div className="field-control">
+        <input
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          inputMode={type === "date" ? undefined : "decimal"}
+          min={min}
+        />
+        {suffix && <em>{suffix}</em>}
+      </div>
+    </label>
+  );
+}
+
+function ResultCard({
+  label, value, sub, rows,
+}: {
+  label: string; value: string; sub?: string; rows?: Array<[string, string]>;
+}) {
+  return (
+    <section className="result-card" aria-live="polite">
+      <span className="result-label">{label}</span>
+      <strong className="result-value">{value}</strong>
+      {sub && <p>{sub}</p>}
+      {rows && (
+        <dl>
+          {rows.map(([term, detail]) => <div key={term}><dt>{term}</dt><dd>{detail}</dd></div>)}
+        </dl>
+      )}
+    </section>
+  );
+}
+
+function CalculatorShell({ children, note }: { children: ReactNode; note?: string }) {
+  return (
+    <div className="calculator-panel">
+      {children}
+      {note && <p className="form-note">{note}</p>}
+    </div>
+  );
+}
+
+function estimateSalary(annualSalary: number, monthlyNonTax: number) {
+  const monthlyGross = annualSalary / 12;
+  const insured = Math.max(0, monthlyGross - monthlyNonTax);
+  const pension = Math.min(insured, 6_370_000) * 0.0475;
+  const health = insured * 0.03595;
+  const longCare = health * 0.1314;
+  const employment = insured * 0.009;
+  const annualTaxBase = Math.max(0, (monthlyGross - monthlyNonTax) * 12 - 15_000_000);
+  let annualIncomeTax = 0;
+  if (annualTaxBase <= 14_000_000) annualIncomeTax = annualTaxBase * 0.06;
+  else if (annualTaxBase <= 50_000_000) annualIncomeTax = 840_000 + (annualTaxBase - 14_000_000) * 0.15;
+  else if (annualTaxBase <= 88_000_000) annualIncomeTax = 6_240_000 + (annualTaxBase - 50_000_000) * 0.24;
+  else annualIncomeTax = 15_360_000 + (annualTaxBase - 88_000_000) * 0.35;
+  const incomeTax = annualIncomeTax / 12;
+  const localTax = incomeTax * 0.1;
+  const deductions = pension + health + longCare + employment + incomeTax + localTax;
+  return { monthlyGross, pension, health, longCare, employment, incomeTax, localTax, deductions, net: monthlyGross - deductions };
+}
+
+function SalaryCalculator({ monthly = false }: { monthly?: boolean }) {
+  const [amount, setAmount] = useState(monthly ? "3500000" : "50000000");
+  const [nonTax, setNonTax] = useState("200000");
+  const annual = monthly ? parseNumber(amount) * 12 : parseNumber(amount);
+  const result = useMemo(() => estimateSalary(annual, parseNumber(nonTax)), [annual, nonTax]);
+  return (
+    <CalculatorShell note="2026년 근로자 부담 보험료율을 반영한 간편 예상치입니다. 소득세는 개인별 공제조건에 따라 실제 급여명세와 달라질 수 있습니다.">
+      <div className="form-grid">
+        <Field label={monthly ? "세전 월급" : "연봉"} value={amount} onChange={setAmount} suffix="원" />
+        <Field label="월 비과세액" value={nonTax} onChange={setNonTax} suffix="원" />
+      </div>
+      <ResultCard
+        label="예상 월 실수령액"
+        value={currency(result.net)}
+        sub={`세전 월급 ${currency(result.monthlyGross)} 기준`}
+        rows={[
+          ["국민연금", currency(result.pension)],
+          ["건강보험", currency(result.health)],
+          ["장기요양", currency(result.longCare)],
+          ["고용보험", currency(result.employment)],
+          ["예상 소득세", currency(result.incomeTax)],
+          ["지방소득세", currency(result.localTax)],
+          ["월 예상 공제액", currency(result.deductions)],
+        ]}
+      />
+    </CalculatorShell>
+  );
+}
+
+function RaiseCalculator() {
+  const [before, setBefore] = useState("40000000");
+  const [after, setAfter] = useState("45000000");
+  const prev = parseNumber(before);
+  const next = parseNumber(after);
+  const rate = prev ? ((next - prev) / prev) * 100 : 0;
+  return (
+    <CalculatorShell>
+      <div className="form-grid"><Field label="이전 연봉" value={before} onChange={setBefore} suffix="원" /><Field label="새 연봉" value={after} onChange={setAfter} suffix="원" /></div>
+      <ResultCard label="연봉 인상률" value={`${number.format(rate)}%`} rows={[["연봉 차이", currency(next - prev)], ["월 환산 차이", currency((next - prev) / 12)]]} />
+    </CalculatorShell>
+  );
+}
+
+function HourlyCalculator() {
+  const [hourly, setHourly] = useState("10320");
+  const [hours, setHours] = useState("40");
+  const weekly = parseNumber(hourly) * parseNumber(hours);
+  const monthly = weekly * 4.345;
+  return (
+    <CalculatorShell note="주휴수당과 각종 수당은 포함하지 않은 단순 환산입니다.">
+      <div className="form-grid"><Field label="시급" value={hourly} onChange={setHourly} suffix="원" /><Field label="주당 근무시간" value={hours} onChange={setHours} suffix="시간" /></div>
+      <ResultCard label="예상 월급" value={currency(monthly)} rows={[["주급", currency(weekly)], ["연봉 환산", currency(monthly * 12)]]} />
+    </CalculatorShell>
+  );
+}
+
+type AddressItem = { roadAddr?: string; jibunAddr?: string; engAddr?: string; zipNo?: string };
+
+function AddressCalculator() {
+  const [mode, setMode] = useState<"ko" | "en">("ko");
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState<AddressItem[]>([]);
+  const [status, setStatus] = useState("");
+  async function search(event: FormEvent) {
+    event.preventDefault();
+    if (query.trim().length < 2) return setStatus("주소를 두 글자 이상 입력해 주세요.");
+    setStatus("공식 주소를 찾고 있어요…");
+    setItems([]);
+    try {
+      const response = await fetch(`/api/address?q=${encodeURIComponent(query)}&mode=${mode}`);
+      const body = await response.json() as { items?: AddressItem[]; message?: string };
+      if (!response.ok) throw new Error(body.message || "주소 검색을 사용할 수 없습니다.");
+      setItems(body.items || []);
+      setStatus(body.items?.length ? "" : "일치하는 주소가 없습니다. 도로명과 건물번호를 함께 입력해 보세요.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "주소 검색 중 문제가 발생했습니다.");
+    }
+  }
+  async function copy(value?: string) {
+    if (value) await navigator.clipboard.writeText(value);
+  }
+  return (
+    <CalculatorShell note="행정안전부 도로명주소 API를 사용합니다. 동·층·호 등 상세주소는 결과를 복사한 뒤 직접 덧붙여 주세요.">
+      <div className="segmented">
+        <button className={mode === "ko" ? "active" : ""} onClick={() => setMode("ko")}>한글 주소로 찾기</button>
+        <button className={mode === "en" ? "active" : ""} onClick={() => setMode("en")}>영문 주소로 찾기</button>
+      </div>
+      <form className="address-search" onSubmit={search}>
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={mode === "ko" ? "예: 세종대로 110" : "예: 110 Sejong-daero"} />
+        <button type="submit">주소 검색</button>
+      </form>
+      {status && <p className="status-message">{status}</p>}
+      <div className="address-results">
+        {items.map((item, index) => (
+          <article key={`${item.roadAddr}-${index}`}>
+            <span className="zip">우편번호 {item.zipNo}</span>
+            <h3>{item.roadAddr || item.jibunAddr}</h3>
+            <p>{item.engAddr}</p>
+            <div><button onClick={() => copy(item.roadAddr)}>한글 복사</button><button onClick={() => copy(item.engAddr)}>영문 복사</button></div>
+          </article>
+        ))}
+      </div>
+    </CalculatorShell>
+  );
+}
+
+function PercentageCalculator() {
+  const [base, setBase] = useState("50000");
+  const [rate, setRate] = useState("20");
+  const value = parseNumber(base) * parseNumber(rate) / 100;
+  return <CalculatorShell><div className="form-grid"><Field label="기준값" value={base} onChange={setBase} /><Field label="퍼센트" value={rate} onChange={setRate} suffix="%" /></div><ResultCard label={`${won.format(parseNumber(base))}의 ${rate}%`} value={number.format(value)} rows={[["나머지 값", number.format(parseNumber(base) - value)]]} /></CalculatorShell>;
+}
+
+function DiscountCalculator() {
+  const [price, setPrice] = useState("100000");
+  const [rate, setRate] = useState("20");
+  const discount = parseNumber(price) * parseNumber(rate) / 100;
+  return <CalculatorShell><div className="form-grid"><Field label="정가" value={price} onChange={setPrice} suffix="원" /><Field label="할인율" value={rate} onChange={setRate} suffix="%" /></div><ResultCard label="최종 결제금액" value={currency(parseNumber(price) - discount)} rows={[["할인 금액", currency(discount)]]} /></CalculatorShell>;
+}
+
+function VatCalculator() {
+  const [amount, setAmount] = useState("110000");
+  const total = parseNumber(amount);
+  const supply = total / 1.1;
+  return <CalculatorShell><Field label="부가세 포함 금액" value={amount} onChange={setAmount} suffix="원" /><ResultCard label="공급가액" value={currency(supply)} rows={[["부가세", currency(total - supply)], ["합계", currency(total)]]} /></CalculatorShell>;
+}
+
+function DutchCalculator() {
+  const [amount, setAmount] = useState("120000");
+  const [people, setPeople] = useState("4");
+  const count = Math.max(1, parseNumber(people));
+  return <CalculatorShell><div className="form-grid"><Field label="총 결제금액" value={amount} onChange={setAmount} suffix="원" /><Field label="인원" value={people} onChange={setPeople} suffix="명" /></div><ResultCard label="1인당 금액" value={currency(parseNumber(amount) / count)} /></CalculatorShell>;
+}
+
+function DateDifferenceCalculator() {
+  const today = new Date().toISOString().slice(0, 10);
+  const [start, setStart] = useState(today);
+  const [end, setEnd] = useState(new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10));
+  const days = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
+  return <CalculatorShell><div className="form-grid"><Field label="시작일" type="date" value={start} onChange={setStart} /><Field label="종료일" type="date" value={end} onChange={setEnd} /></div><ResultCard label="두 날짜의 차이" value={`${Math.abs(days).toLocaleString()}일`} rows={[["시작일 포함", `${Math.abs(days) + 1}일`], ["주 단위", `${number.format(Math.abs(days) / 7)}주`]]} /></CalculatorShell>;
+}
+
+function DdayCalculator() {
+  const [target, setTarget] = useState(new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10));
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = Math.ceil((new Date(target).getTime() - today.getTime()) / 86400000);
+  return <CalculatorShell><Field label="목표일" type="date" value={target} onChange={setTarget} /><ResultCard label="오늘부터 목표일까지" value={days === 0 ? "D-day" : days > 0 ? `D-${days}` : `D+${Math.abs(days)}`} /></CalculatorShell>;
+}
+
+function AgeCalculator() {
+  const [birth, setBirth] = useState("1990-01-01");
+  const today = new Date();
+  const birthDate = new Date(birth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) age -= 1;
+  return <CalculatorShell><Field label="생년월일" type="date" value={birth} onChange={setBirth} /><ResultCard label="현재 만 나이" value={`만 ${Math.max(0, age)}세`} rows={[["연 나이", `${Math.max(0, today.getFullYear() - birthDate.getFullYear())}세`]]} /></CalculatorShell>;
+}
+
+function AreaCalculator() {
+  const [pyeong, setPyeong] = useState("34");
+  const square = parseNumber(pyeong) * 3.305785;
+  return <CalculatorShell><Field label="평" value={pyeong} onChange={setPyeong} suffix="평" /><ResultCard label="제곱미터로 변환" value={`${number.format(square)}㎡`} rows={[["평으로 다시 환산", `${number.format(square / 3.305785)}평`]]} /></CalculatorShell>;
+}
+
+function CharacterCalculator() {
+  const [text, setText] = useState("");
+  const bytes = new TextEncoder().encode(text).length;
+  return <CalculatorShell><label className="textarea-field"><span>텍스트</span><textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="글자 수를 확인할 내용을 입력하세요" /></label><ResultCard label="공백 포함 글자 수" value={`${text.length.toLocaleString()}자`} rows={[["공백 제외", `${text.replace(/\s/g, "").length.toLocaleString()}자`], ["UTF-8 바이트", `${bytes.toLocaleString()} bytes`], ["줄 수", `${text ? text.split(/\r\n|\r|\n/).length : 0}줄`]]} /></CalculatorShell>;
+}
+
+function renderCalculator(id: string) {
+  switch (id) {
+    case "salary": return <SalaryCalculator />;
+    case "monthly": return <SalaryCalculator monthly />;
+    case "raise": return <RaiseCalculator />;
+    case "hourly": return <HourlyCalculator />;
+    case "address": return <AddressCalculator />;
+    case "percentage": return <PercentageCalculator />;
+    case "discount": return <DiscountCalculator />;
+    case "vat": return <VatCalculator />;
+    case "dutch": return <DutchCalculator />;
+    case "date": return <DateDifferenceCalculator />;
+    case "dday": return <DdayCalculator />;
+    case "age": return <AgeCalculator />;
+    case "area": return <AreaCalculator />;
+    case "characters": return <CharacterCalculator />;
+    default: return null;
+  }
+}
+
+export default function ToolPageClient({ tool }: { tool: Tool }) {
+  const related = tools.filter((item) => item.id !== tool.id && item.category === tool.category).slice(0, 3);
+  return (
+    <main>
+      <header className="site-header">
+        <Link href="/" className="brand"><span className="brand-mark">=</span><span>바로계산</span></Link>
+        <Link href="/" className="header-link">도구 검색</Link>
+      </header>
+      <div className="tool-page">
+        <nav className="breadcrumb"><Link href="/">홈</Link><span>/</span><span>{tool.category}</span></nav>
+        <section className="tool-intro">
+          <span className={`tool-glyph tone-${tool.tone}`}>{tool.glyph}</span>
+          <div><p>{tool.category}</p><h1>{tool.name}</h1><span>{tool.description}</span></div>
+        </section>
+        {renderCalculator(tool.id)}
+        <div className="privacy-note"><span>✓</span><div><strong>입력값을 저장하지 않아요</strong><p>계산은 사용 중인 브라우저에서 처리되며 입력한 값은 서버에 저장하지 않습니다.</p></div></div>
+        <div className="ad-placeholder"><span>광고 영역</span></div>
+        <section className="guide-section">
+          <span>Guide</span>
+          <h2>{tool.name} 사용 방법</h2>
+          <p>필요한 값을 입력하면 결과가 바로 계산됩니다. 결과는 입력 조건과 반올림 방식에 따라 실제 값과 조금 다를 수 있으므로 참고용으로 활용해 주세요.</p>
+          {tool.id === "salary" && <p>2026년 국민연금 근로자 부담률 4.75%, 건강보험 직장가입자 근로자 부담률 3.595%를 반영했습니다. 개인별 비과세 항목과 부양가족, 세액공제에 따라 실제 소득세는 달라집니다.</p>}
+          {tool.id === "address" && <p>공식 도로명주소 데이터에서 일치하는 건물을 검색합니다. 일반 문장 번역이 아니므로 도로명과 건물번호를 함께 입력하면 더 정확합니다.</p>}
+        </section>
+        <section className="related-section">
+          <h2>함께 쓰면 좋은 도구</h2>
+          <div>
+            {related.map((item) => <Link key={item.id} href={item.path}><span className={`tool-glyph tone-${item.tone}`}>{item.glyph}</span><span><strong>{item.name}</strong><small>{item.description}</small></span><i>→</i></Link>)}
+          </div>
+        </section>
+      </div>
+      <footer>
+        <Link href="/" className="brand footer-brand"><span className="brand-mark">=</span><span>바로계산</span></Link>
+        <p>복잡한 계산을 가장 간단하게.</p>
+        <nav><Link href="/">도구 검색</Link><Link href="/privacy">개인정보처리방침</Link></nav>
+        <small>© 2026 바로계산. 계산 결과는 참고용입니다.</small>
+      </footer>
+    </main>
+  );
+}
