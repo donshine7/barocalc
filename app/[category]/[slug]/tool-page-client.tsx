@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { tools, type Tool } from "../../tools";
+import { toolGuides } from "../../tool-guides";
 
 const won = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 2 });
@@ -509,6 +510,7 @@ function renderCalculator(id: string) {
 
 export default function ToolPageClient({ tool }: { tool: Tool }) {
   const related = tools.filter((item) => item.id !== tool.id && item.category === tool.category).slice(0, 3);
+  const guides = toolGuides[tool.id] || [];
   return (
     <main>
       <header className="site-header">
@@ -523,13 +525,11 @@ export default function ToolPageClient({ tool }: { tool: Tool }) {
         </section>
         {renderCalculator(tool.id)}
         <div className="privacy-note"><span>✓</span><div><strong>입력값을 저장하지 않아요</strong><p>계산은 사용 중인 브라우저에서 처리되며 입력한 값은 서버에 저장하지 않습니다.</p></div></div>
-        <div className="ad-placeholder"><span>광고 영역</span></div>
         <section className="guide-section">
           <span>Guide</span>
           <h2>{tool.name} 사용 방법</h2>
-          <p>필요한 값을 입력하면 결과가 바로 계산됩니다. 결과는 입력 조건과 반올림 방식에 따라 실제 값과 조금 다를 수 있으므로 참고용으로 활용해 주세요.</p>
+          {guides.map((guide) => <p key={guide}>{guide}</p>)}
           {tool.id === "salary" && <p>2026년 국민연금 근로자 부담률 4.75%, 건강보험 직장가입자 근로자 부담률 3.595%를 반영했습니다. 개인별 비과세 항목과 부양가족, 세액공제에 따라 실제 소득세는 달라집니다.</p>}
-          {tool.id === "address" && <p>공식 도로명주소 데이터에서 일치하는 건물을 검색합니다. 일반 문장 번역이 아니므로 도로명과 건물번호를 함께 입력하면 더 정확합니다.</p>}
         </section>
         <section className="related-section">
           <h2>함께 쓰면 좋은 도구</h2>
@@ -541,7 +541,7 @@ export default function ToolPageClient({ tool }: { tool: Tool }) {
       <footer>
         <Link href="/" className="brand footer-brand"><span className="brand-mark">=</span><span>바로계산</span></Link>
         <p>복잡한 계산을 가장 간단하게.</p>
-        <nav><Link href="/">도구 검색</Link><Link href="/privacy">개인정보처리방침</Link></nav>
+        <nav><Link href="/">도구 검색</Link><Link href="/about">사이트 소개</Link><Link href="/terms">이용약관</Link><Link href="/privacy">개인정보처리방침</Link></nav>
         <small>© 2026 바로계산. 계산 결과는 참고용입니다.</small>
       </footer>
     </main>

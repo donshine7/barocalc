@@ -14,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: "%s | 바로계산",
     },
     description: "연봉 실수령액, 한글·영문 주소, 퍼센트, 날짜, 평수 등 일상에 필요한 계산기와 변환 도구를 빠르게 이용하세요.",
+    alternates: { canonical: "/" },
     openGraph: {
       title: "바로계산 — 매일 쓰는 계산 도구",
       description: "필요한 계산을 검색하고 바로 사용하세요.",

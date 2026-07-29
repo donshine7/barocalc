@@ -129,10 +129,6 @@ export default function Home() {
             </div>
           </section>
 
-          <div className="ad-placeholder" aria-hidden="true">
-            <span>광고 영역</span>
-          </div>
-
           <section id="all-tools" className="all-tools section-shell">
             <div className="section-heading">
               <span>All tools</span>
@@ -165,7 +161,7 @@ export default function Home() {
       <footer>
         <Link href="/" className="brand footer-brand"><span className="brand-mark">=</span><span>바로계산</span></Link>
         <p>입력한 계산 값은 서버에 저장하지 않습니다.</p>
-        <nav><a href="#all-tools">전체 도구</a><Link href="/privacy">개인정보처리방침</Link></nav>
+        <nav><a href="#all-tools">전체 도구</a><Link href="/about">사이트 소개</Link><Link href="/terms">이용약관</Link><Link href="/privacy">개인정보처리방침</Link></nav>
         <small>© 2026 바로계산. 계산 결과는 참고용입니다.</small>
       </footer>
     </main>

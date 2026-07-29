@@ -21,6 +21,7 @@ export async function generateMetadata({
   return {
     title: tool.name,
     description: tool.description,
+    alternates: { canonical: tool.path },
   };
 }
 
