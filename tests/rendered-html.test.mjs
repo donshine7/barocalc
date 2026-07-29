@@ -55,7 +55,7 @@ test("server-renders the expanded unit converters", async () => {
 test("server-renders currency and Korean-to-English address tools", async () => {
   const currencyResponse = await render("/unit/currency");
   assert.equal(currencyResponse.status, 200);
-  assert.match(await currencyResponse.text(), /실시간 환율 변환기/);
+  assert.match(await currencyResponse.text(), /최신 기준환율 변환기/);
 
   const addressResponse = await render("/life/address");
   assert.equal(addressResponse.status, 200);

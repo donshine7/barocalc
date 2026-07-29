@@ -80,7 +80,7 @@ export const tools: Tool[] = [
     keywords: ["만나이", "나이", "생년월일", "연령", "age"], popular: true, priority: 80, glyph: "만", tone: "mint",
   },
   {
-    id: "currency", name: "실시간 환율 변환기", shortName: "환율 변환", category: "단위·문서",
+    id: "currency", name: "최신 기준환율 변환기", shortName: "환율 변환", category: "단위·문서",
     description: "30개 주요 통화를 최신 기준환율로 변환", path: "/unit/currency",
     keywords: ["환율", "환전", "달러", "원화", "엔화", "유로", "위안", "외화", "currency", "exchange rate"], popular: true, priority: 93, glyph: "$", tone: "mint",
   },
