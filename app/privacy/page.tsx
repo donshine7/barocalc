@@ -18,7 +18,7 @@ export default function PrivacyPage() {
         <p>광고가 도입되면 Google을 포함한 제3자 광고 사업자가 이전 방문 기록을 바탕으로 광고를 제공하기 위해 쿠키, 웹 비콘, IP 주소와 유사 식별자를 사용할 수 있습니다.</p>
         <p>Google과 파트너의 광고 쿠키 사용을 원하지 않는 사용자는 <a href="https://adssettings.google.com/" target="_blank" rel="noreferrer">Google 광고 설정</a>에서 맞춤형 광고를 관리하거나 사용 중지할 수 있습니다.</p>
         <h2>문의</h2>
-        <p>서비스 및 개인정보 관련 문의 방법은 <Link href="/about">사이트 소개</Link> 페이지에서 안내합니다.</p>
+        <p>서비스 및 개인정보 관련 문의는 <a href="mailto:barocalculation@gmail.com">barocalculation@gmail.com</a>으로 보내 주세요. 운영 정보는 <Link href="/about">사이트 소개</Link> 페이지에서도 확인할 수 있습니다.</p>
         <small>시행일: 2026년 7월 29일</small>
       </article>
     </main>

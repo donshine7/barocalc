@@ -19,7 +19,7 @@ export default function AboutPage() {
         <h2>정보의 기준</h2>
         <p>주소는 행정안전부 주소정보 서비스, 환율은 공개 기준환율 데이터, 급여 계산은 적용 연도의 보험료율과 세율 기준을 참고합니다. 실제 계약·세무·행정 결과는 개인 조건과 기관 기준에 따라 달라질 수 있습니다.</p>
         <h2>문의와 개선 제안</h2>
-        <p>오류 제보와 계산기 추가 제안을 받을 공개 연락처는 독립 도메인 개설과 함께 이 페이지에 게시할 예정입니다.</p>
+        <p>오류 제보, 계산기 추가 제안과 서비스 관련 문의는 <a href="mailto:barocalculation@gmail.com">barocalculation@gmail.com</a>으로 보내 주세요.</p>
         <p><Link href="/terms">이용약관</Link>과 <Link href="/privacy">개인정보처리방침</Link>도 확인해 주세요.</p>
       </article>
     </main>
