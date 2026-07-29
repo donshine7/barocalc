@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, ReactNode, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { tools, type Tool } from "../../tools";
 
 const won = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 });
@@ -67,35 +67,75 @@ function CalculatorShell({ children, note }: { children: ReactNode; note?: strin
   );
 }
 
-function estimateSalary(annualSalary: number, monthlyNonTax: number) {
+function earnedIncomeDeduction(gross: number) {
+  if (gross <= 5_000_000) return gross * 0.7;
+  if (gross <= 15_000_000) return 3_500_000 + (gross - 5_000_000) * 0.4;
+  if (gross <= 45_000_000) return 7_500_000 + (gross - 15_000_000) * 0.15;
+  if (gross <= 100_000_000) return 12_000_000 + (gross - 45_000_000) * 0.05;
+  return Math.min(20_000_000, 14_750_000 + (gross - 100_000_000) * 0.02);
+}
+
+function calculateProgressiveTax(taxBase: number) {
+  const brackets = [
+    { max: 14_000_000, rate: 0.06, deduction: 0 },
+    { max: 50_000_000, rate: 0.15, deduction: 1_260_000 },
+    { max: 88_000_000, rate: 0.24, deduction: 5_760_000 },
+    { max: 150_000_000, rate: 0.35, deduction: 15_440_000 },
+    { max: 300_000_000, rate: 0.38, deduction: 19_940_000 },
+    { max: 500_000_000, rate: 0.4, deduction: 25_940_000 },
+    { max: 1_000_000_000, rate: 0.42, deduction: 35_940_000 },
+    { max: Infinity, rate: 0.45, deduction: 65_940_000 },
+  ];
+  const bracket = brackets.find((item) => taxBase <= item.max) || brackets[brackets.length - 1];
+  return { annualTax: Math.max(0, taxBase * bracket.rate - bracket.deduction), marginalRate: bracket.rate };
+}
+
+function estimateSalary(annualSalary: number, monthlyNonTax: number, familyCount: number) {
   const monthlyGross = annualSalary / 12;
   const insured = Math.max(0, monthlyGross - monthlyNonTax);
   const pension = Math.min(insured, 6_370_000) * 0.0475;
   const health = insured * 0.03595;
   const longCare = health * 0.1314;
   const employment = insured * 0.009;
-  const annualTaxBase = Math.max(0, (monthlyGross - monthlyNonTax) * 12 - 15_000_000);
-  let annualIncomeTax = 0;
-  if (annualTaxBase <= 14_000_000) annualIncomeTax = annualTaxBase * 0.06;
-  else if (annualTaxBase <= 50_000_000) annualIncomeTax = 840_000 + (annualTaxBase - 14_000_000) * 0.15;
-  else if (annualTaxBase <= 88_000_000) annualIncomeTax = 6_240_000 + (annualTaxBase - 50_000_000) * 0.24;
-  else annualIncomeTax = 15_360_000 + (annualTaxBase - 88_000_000) * 0.35;
-  const incomeTax = annualIncomeTax / 12;
+  const annualGross = Math.max(0, annualSalary - monthlyNonTax * 12);
+  const familyDeduction = Math.max(1, familyCount) * 1_500_000;
+  const socialInsuranceDeduction = (pension + health + longCare + employment) * 12;
+  const annualTaxBase = Math.max(
+    0,
+    annualGross - earnedIncomeDeduction(annualGross) - familyDeduction - socialInsuranceDeduction,
+  );
+  const progressiveTax = calculateProgressiveTax(annualTaxBase);
+  const earnedIncomeTaxCredit = Math.min(
+    660_000,
+    progressiveTax.annualTax <= 1_300_000
+      ? progressiveTax.annualTax * 0.55
+      : 715_000 + (progressiveTax.annualTax - 1_300_000) * 0.3,
+  );
+  const incomeTax = Math.max(0, progressiveTax.annualTax - earnedIncomeTaxCredit) / 12;
   const localTax = incomeTax * 0.1;
   const deductions = pension + health + longCare + employment + incomeTax + localTax;
-  return { monthlyGross, pension, health, longCare, employment, incomeTax, localTax, deductions, net: monthlyGross - deductions };
+  return {
+    monthlyGross, pension, health, longCare, employment, incomeTax, localTax, deductions,
+    net: monthlyGross - deductions, annualTaxBase, familyDeduction,
+    marginalRate: progressiveTax.marginalRate,
+  };
 }
 
 function SalaryCalculator({ monthly = false }: { monthly?: boolean }) {
   const [amount, setAmount] = useState(monthly ? "3500000" : "50000000");
   const [nonTax, setNonTax] = useState("200000");
+  const [familyCount, setFamilyCount] = useState("1");
   const annual = monthly ? parseNumber(amount) * 12 : parseNumber(amount);
-  const result = useMemo(() => estimateSalary(annual, parseNumber(nonTax)), [annual, nonTax]);
+  const result = useMemo(
+    () => estimateSalary(annual, parseNumber(nonTax), Math.max(1, parseNumber(familyCount))),
+    [annual, nonTax, familyCount],
+  );
   return (
-    <CalculatorShell note="2026년 근로자 부담 보험료율을 반영한 간편 예상치입니다. 소득세는 개인별 공제조건에 따라 실제 급여명세와 달라질 수 있습니다.">
+    <CalculatorShell note="2026년 근로자 부담 보험료율과 기본 인적공제(본인·배우자·공제대상 부양가족 1명당 연 150만원)를 반영한 예상치입니다. 간이세액표와 개인별 세액공제에 따라 실제 급여명세와 다를 수 있습니다.">
       <div className="form-grid">
         <Field label={monthly ? "세전 월급" : "연봉"} value={amount} onChange={setAmount} suffix="원" />
         <Field label="월 비과세액" value={nonTax} onChange={setNonTax} suffix="원" />
+        <Field label="부양가족 수 (본인 포함)" type="number" min="1" value={familyCount} onChange={setFamilyCount} suffix="명" />
       </div>
       <ResultCard
         label="예상 월 실수령액"
@@ -109,6 +149,9 @@ function SalaryCalculator({ monthly = false }: { monthly?: boolean }) {
           ["예상 소득세", currency(result.incomeTax)],
           ["지방소득세", currency(result.localTax)],
           ["월 예상 공제액", currency(result.deductions)],
+          ["인적공제 반영액", currency(result.familyDeduction)],
+          ["예상 과세표준", currency(result.annualTaxBase)],
+          ["적용 소득세율", `${result.marginalRate * 100}%`],
         ]}
       />
     </CalculatorShell>
@@ -220,34 +263,219 @@ function DutchCalculator() {
   return <CalculatorShell><div className="form-grid"><Field label="총 결제금액" value={amount} onChange={setAmount} suffix="원" /><Field label="인원" value={people} onChange={setPeople} suffix="명" /></div><ResultCard label="1인당 금액" value={currency(parseNumber(amount) / count)} /></CalculatorShell>;
 }
 
+function isoDateOffset(days: number) {
+  return new Date(Date.now() + 86400000 * days).toISOString().slice(0, 10);
+}
+
 function DateDifferenceCalculator() {
-  const today = new Date().toISOString().slice(0, 10);
-  const [start, setStart] = useState(today);
-  const [end, setEnd] = useState(new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10));
+  const [start, setStart] = useState(() => isoDateOffset(0));
+  const [end, setEnd] = useState(() => isoDateOffset(30));
   const days = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
   return <CalculatorShell><div className="form-grid"><Field label="시작일" type="date" value={start} onChange={setStart} /><Field label="종료일" type="date" value={end} onChange={setEnd} /></div><ResultCard label="두 날짜의 차이" value={`${Math.abs(days).toLocaleString()}일`} rows={[["시작일 포함", `${Math.abs(days) + 1}일`], ["주 단위", `${number.format(Math.abs(days) / 7)}주`]]} /></CalculatorShell>;
 }
 
 function DdayCalculator() {
-  const [target, setTarget] = useState(new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10));
-  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const [target, setTarget] = useState(() => isoDateOffset(30));
+  const [today] = useState(() => {
+    const value = new Date();
+    value.setHours(0, 0, 0, 0);
+    return value;
+  });
   const days = Math.ceil((new Date(target).getTime() - today.getTime()) / 86400000);
   return <CalculatorShell><Field label="목표일" type="date" value={target} onChange={setTarget} /><ResultCard label="오늘부터 목표일까지" value={days === 0 ? "D-day" : days > 0 ? `D-${days}` : `D+${Math.abs(days)}`} /></CalculatorShell>;
 }
 
 function AgeCalculator() {
   const [birth, setBirth] = useState("1990-01-01");
-  const today = new Date();
+  const [today] = useState(() => new Date());
   const birthDate = new Date(birth);
   let age = today.getFullYear() - birthDate.getFullYear();
   if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) age -= 1;
   return <CalculatorShell><Field label="생년월일" type="date" value={birth} onChange={setBirth} /><ResultCard label="현재 만 나이" value={`만 ${Math.max(0, age)}세`} rows={[["연 나이", `${Math.max(0, today.getFullYear() - birthDate.getFullYear())}세`]]} /></CalculatorShell>;
 }
 
-function AreaCalculator() {
-  const [pyeong, setPyeong] = useState("34");
-  const square = parseNumber(pyeong) * 3.305785;
-  return <CalculatorShell><Field label="평" value={pyeong} onChange={setPyeong} suffix="평" /><ResultCard label="제곱미터로 변환" value={`${number.format(square)}㎡`} rows={[["평으로 다시 환산", `${number.format(square / 3.305785)}평`]]} /></CalculatorShell>;
+type UnitDefinition = {
+  code: string;
+  label: string;
+  symbol: string;
+  factor: number;
+};
+
+const LENGTH_UNITS: UnitDefinition[] = [
+  { code: "nm", label: "나노미터", symbol: "nm", factor: 1e-9 },
+  { code: "um", label: "마이크로미터", symbol: "μm", factor: 1e-6 },
+  { code: "mm", label: "밀리미터", symbol: "mm", factor: 0.001 },
+  { code: "cm", label: "센티미터", symbol: "cm", factor: 0.01 },
+  { code: "m", label: "미터", symbol: "m", factor: 1 },
+  { code: "km", label: "킬로미터", symbol: "km", factor: 1000 },
+  { code: "in", label: "인치", symbol: "in", factor: 0.0254 },
+  { code: "ft", label: "피트", symbol: "ft", factor: 0.3048 },
+  { code: "yd", label: "야드", symbol: "yd", factor: 0.9144 },
+  { code: "mi", label: "마일", symbol: "mi", factor: 1609.344 },
+  { code: "nmi", label: "해리", symbol: "nmi", factor: 1852 },
+  { code: "ja", label: "자", symbol: "자", factor: 0.30303 },
+  { code: "ri", label: "리", symbol: "리", factor: 392.7273 },
+];
+
+const AREA_UNITS: UnitDefinition[] = [
+  { code: "mm2", label: "제곱밀리미터", symbol: "mm²", factor: 0.000001 },
+  { code: "cm2", label: "제곱센티미터", symbol: "cm²", factor: 0.0001 },
+  { code: "m2", label: "제곱미터", symbol: "m²", factor: 1 },
+  { code: "km2", label: "제곱킬로미터", symbol: "km²", factor: 1_000_000 },
+  { code: "pyeong", label: "평", symbol: "평", factor: 3.305785 },
+  { code: "are", label: "아르", symbol: "a", factor: 100 },
+  { code: "ha", label: "헥타르", symbol: "ha", factor: 10_000 },
+  { code: "acre", label: "에이커", symbol: "acre", factor: 4046.8564224 },
+  { code: "in2", label: "제곱인치", symbol: "in²", factor: 0.00064516 },
+  { code: "ft2", label: "제곱피트", symbol: "ft²", factor: 0.09290304 },
+  { code: "yd2", label: "제곱야드", symbol: "yd²", factor: 0.83612736 },
+];
+
+const VOLUME_UNITS: UnitDefinition[] = [
+  { code: "ml", label: "밀리리터", symbol: "mL", factor: 0.001 },
+  { code: "cl", label: "센티리터", symbol: "cL", factor: 0.01 },
+  { code: "dl", label: "데시리터", symbol: "dL", factor: 0.1 },
+  { code: "l", label: "리터", symbol: "L", factor: 1 },
+  { code: "cm3", label: "세제곱센티미터", symbol: "cm³", factor: 0.001 },
+  { code: "m3", label: "세제곱미터", symbol: "m³", factor: 1000 },
+  { code: "tsp", label: "작은술 (미국)", symbol: "tsp", factor: 0.0049289216 },
+  { code: "tbsp", label: "큰술 (미국)", symbol: "tbsp", factor: 0.0147867648 },
+  { code: "cup", label: "컵 (미국)", symbol: "cup", factor: 0.2365882365 },
+  { code: "floz", label: "액량 온스 (미국)", symbol: "fl oz", factor: 0.0295735296 },
+  { code: "pt", label: "파인트 (미국)", symbol: "pt", factor: 0.473176473 },
+  { code: "qt", label: "쿼트 (미국)", symbol: "qt", factor: 0.946352946 },
+  { code: "gal", label: "갤런 (미국)", symbol: "gal", factor: 3.785411784 },
+  { code: "in3", label: "세제곱인치", symbol: "in³", factor: 0.016387064 },
+  { code: "ft3", label: "세제곱피트", symbol: "ft³", factor: 28.316846592 },
+];
+
+function formatConverted(value: number) {
+  if (!Number.isFinite(value)) return "0";
+  const absolute = Math.abs(value);
+  if (absolute !== 0 && (absolute < 0.000001 || absolute >= 1_000_000_000)) {
+    return value.toExponential(8).replace(/\.?0+e/, "e");
+  }
+  return new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 10 }).format(value);
+}
+
+function UnitConverter({
+  units, defaultFrom, defaultTo, note,
+}: {
+  units: UnitDefinition[];
+  defaultFrom: string;
+  defaultTo: string;
+  note: string;
+}) {
+  const [amount, setAmount] = useState("1");
+  const [from, setFrom] = useState(defaultFrom);
+  const [to, setTo] = useState(defaultTo);
+  const fromUnit = units.find((unit) => unit.code === from) || units[0];
+  const toUnit = units.find((unit) => unit.code === to) || units[1];
+  const converted = parseNumber(amount) * fromUnit.factor / toUnit.factor;
+  function swap() {
+    setFrom(to);
+    setTo(from);
+  }
+  return (
+    <CalculatorShell note={note}>
+      <Field label="변환할 값" value={amount} onChange={setAmount} suffix={fromUnit.symbol} />
+      <div className="unit-row">
+        <label className="unit-field">
+          <span>변환 전 단위</span>
+          <select value={from} onChange={(event) => setFrom(event.target.value)}>
+            {units.map((unit) => <option key={unit.code} value={unit.code}>{unit.label} ({unit.symbol})</option>)}
+          </select>
+        </label>
+        <button className="swap-button" type="button" onClick={swap} aria-label="변환 단위 서로 바꾸기">⇄</button>
+        <label className="unit-field">
+          <span>변환 후 단위</span>
+          <select value={to} onChange={(event) => setTo(event.target.value)}>
+            {units.map((unit) => <option key={unit.code} value={unit.code}>{unit.label} ({unit.symbol})</option>)}
+          </select>
+        </label>
+      </div>
+      <ResultCard
+        label={`${fromUnit.label} → ${toUnit.label}`}
+        value={`${formatConverted(converted)} ${toUnit.symbol}`}
+        sub={`1 ${fromUnit.symbol} = ${formatConverted(fromUnit.factor / toUnit.factor)} ${toUnit.symbol}`}
+      />
+    </CalculatorShell>
+  );
+}
+
+const CURRENCY_LABELS: Record<string, string> = {
+  EUR: "유로", USD: "미국 달러", JPY: "일본 엔", BGN: "불가리아 레프",
+  CZK: "체코 코루나", DKK: "덴마크 크로네", GBP: "영국 파운드", HUF: "헝가리 포린트",
+  PLN: "폴란드 즈워티", RON: "루마니아 레우", SEK: "스웨덴 크로나", CHF: "스위스 프랑",
+  ISK: "아이슬란드 크로나", NOK: "노르웨이 크로네", TRY: "튀르키예 리라", AUD: "호주 달러",
+  BRL: "브라질 헤알", CAD: "캐나다 달러", CNY: "중국 위안", HKD: "홍콩 달러",
+  IDR: "인도네시아 루피아", ILS: "이스라엘 셰켈", INR: "인도 루피", KRW: "대한민국 원",
+  MXN: "멕시코 페소", MYR: "말레이시아 링깃", NZD: "뉴질랜드 달러", PHP: "필리핀 페소",
+  SGD: "싱가포르 달러", THB: "태국 바트", ZAR: "남아프리카공화국 랜드",
+};
+
+type ExchangeResponse = { date?: string; rates?: Record<string, number>; message?: string };
+
+function CurrencyCalculator() {
+  const [amount, setAmount] = useState("1000000");
+  const [from, setFrom] = useState("KRW");
+  const [to, setTo] = useState("USD");
+  const [rates, setRates] = useState<Record<string, number>>({});
+  const [date, setDate] = useState("");
+  const [status, setStatus] = useState("최신 기준환율을 불러오고 있어요…");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/exchange")
+      .then(async (response) => {
+        const body = await response.json() as ExchangeResponse;
+        if (!response.ok || !body.rates) throw new Error(body.message || "환율 정보를 불러오지 못했습니다.");
+        if (active) {
+          setRates(body.rates);
+          setDate(body.date || "");
+          setStatus("");
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) setStatus(error instanceof Error ? error.message : "환율 정보를 불러오지 못했습니다.");
+      });
+    return () => { active = false; };
+  }, []);
+
+  const codes = Object.keys(CURRENCY_LABELS).filter((code) => rates[code]);
+  const converted = rates[from] && rates[to] ? parseNumber(amount) / rates[from] * rates[to] : 0;
+  const resultFormatter = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 4 });
+  function swap() {
+    setFrom(to);
+    setTo(from);
+  }
+  return (
+    <CalculatorShell note="유럽중앙은행(ECB) 기준환율을 이용한 참고용 환산입니다. 카드사·은행의 실시간 매매기준율, 수수료 및 환전 우대는 반영되지 않습니다.">
+      <Field label="환전할 금액" value={amount} onChange={setAmount} suffix={from} />
+      <div className="unit-row">
+        <label className="unit-field">
+          <span>보내는 통화</span>
+          <select value={from} onChange={(event) => setFrom(event.target.value)} disabled={!codes.length}>
+            {(codes.length ? codes : Object.keys(CURRENCY_LABELS)).map((code) => <option key={code} value={code}>{CURRENCY_LABELS[code]} ({code})</option>)}
+          </select>
+        </label>
+        <button className="swap-button" type="button" onClick={swap} aria-label="통화 서로 바꾸기">⇄</button>
+        <label className="unit-field">
+          <span>받는 통화</span>
+          <select value={to} onChange={(event) => setTo(event.target.value)} disabled={!codes.length}>
+            {(codes.length ? codes : Object.keys(CURRENCY_LABELS)).map((code) => <option key={code} value={code}>{CURRENCY_LABELS[code]} ({code})</option>)}
+          </select>
+        </label>
+      </div>
+      {status
+        ? <p className="status-message">{status}</p>
+        : <ResultCard
+            label={`${CURRENCY_LABELS[from]} → ${CURRENCY_LABELS[to]}`}
+            value={`${resultFormatter.format(converted)} ${to}`}
+            sub={`${date} ECB 기준 · 1 ${from} = ${resultFormatter.format(rates[to] / rates[from])} ${to}`}
+          />}
+    </CalculatorShell>
+  );
 }
 
 function CharacterCalculator() {
@@ -270,7 +498,10 @@ function renderCalculator(id: string) {
     case "date": return <DateDifferenceCalculator />;
     case "dday": return <DdayCalculator />;
     case "age": return <AgeCalculator />;
-    case "area": return <AreaCalculator />;
+    case "currency": return <CurrencyCalculator />;
+    case "length": return <UnitConverter units={LENGTH_UNITS} defaultFrom="m" defaultTo="ft" note="국제 단위계와 공인 환산계수를 기준으로 계산합니다. 전통 단위인 자·리는 관용 환산값입니다." />;
+    case "area": return <UnitConverter units={AREA_UNITS} defaultFrom="pyeong" defaultTo="m2" note="1평은 약 3.305785㎡입니다. 부동산 계약에서는 공시된 전용·공급면적을 함께 확인하세요." />;
+    case "volume": return <UnitConverter units={VOLUME_UNITS} defaultFrom="l" defaultTo="gal" note="컵·큰술·작은술·갤런은 미국식 단위를 적용합니다. 영국식 단위와 값이 다를 수 있습니다." />;
     case "characters": return <CharacterCalculator />;
     default: return null;
   }

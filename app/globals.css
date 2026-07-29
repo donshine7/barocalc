@@ -165,6 +165,19 @@ button { color: inherit; }
 .field-control:focus-within { border-color: #7aa2f3; box-shadow: 0 0 0 3px rgba(40,100,220,.08); }
 .field-control input { width: 100%; min-width: 0; height: 100%; border: 0; outline: 0; padding: 0 14px; background: transparent; font-size: 17px; font-weight: 600; }
 .field-control em { padding-right: 14px; font-size: 14px; font-style: normal; color: var(--muted); white-space: nowrap; }
+.unit-row { display: grid; grid-template-columns: 1fr 48px 1fr; align-items: end; gap: 12px; margin-bottom: 18px; }
+.unit-field > span { display: block; margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+.unit-field select {
+  width: 100%; height: 54px; padding: 0 40px 0 14px; border: 1px solid #dce1e9; border-radius: 12px;
+  outline: 0; background: #fff; color: var(--ink); font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.unit-field select:focus { border-color: #7aa2f3; box-shadow: 0 0 0 3px rgba(40,100,220,.08); }
+.unit-field select:disabled { color: #98a2b3; cursor: wait; }
+.swap-button {
+  width: 48px; height: 48px; margin-bottom: 3px; border: 1px solid #dce1e9; border-radius: 50%;
+  background: #fff; color: var(--brand); font-size: 22px; font-weight: 700; cursor: pointer;
+}
+.swap-button:hover { border-color: #a8c1f4; background: #f5f8ff; }
 .result-card { padding: 28px; background: #fff; border: 1px solid #e0e5ed; border-radius: 17px; text-align: center; }
 .result-label { display: block; color: var(--muted); font-size: 14px; }
 .result-value { display: block; margin: 5px 0; color: var(--mint); font-size: 40px; line-height: 1.2; letter-spacing: -.045em; }
@@ -264,6 +277,8 @@ footer small { color: #98a2b3; font-size: 12px; }
   .calculator-panel { margin: 0 -4px; padding: 18px; border-radius: 18px; }
   .form-grid { grid-template-columns: 1fr; gap: 0; }
   .field-control { height: 54px; }
+  .unit-row { grid-template-columns: 1fr; gap: 10px; }
+  .swap-button { margin: -2px auto; transform: rotate(90deg); }
   .result-card { padding: 24px 18px; }
   .result-value { font-size: 35px; }
   .address-search { grid-template-columns: 1fr; }

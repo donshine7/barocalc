@@ -39,8 +39,8 @@ export const tools: Tool[] = [
     keywords: ["시급", "월급", "주급", "일급", "최저시급", "알바"], priority: 72, glyph: "시", tone: "violet",
   },
   {
-    id: "address", name: "한글·영문 주소 변환기", shortName: "한영 주소 변환", category: "생활 계산",
-    description: "도로명주소, 영문주소와 우편번호 확인", path: "/life/address",
+    id: "address", name: "한글 주소 → 영문 주소 변환기", shortName: "영문 주소 변환", category: "생활 계산",
+    description: "한글 도로명주소를 영문주소와 우편번호로 변환", path: "/life/address",
     keywords: ["주소", "주소변환", "한글주소", "영문주소", "영어주소", "한영주소", "도로명주소", "지번주소", "우편번호", "해외배송", "국제우편", "address", "postal code", "zip code"],
     popular: true, priority: 98, glyph: "A", tone: "mint",
   },
@@ -80,9 +80,24 @@ export const tools: Tool[] = [
     keywords: ["만나이", "나이", "생년월일", "연령", "age"], popular: true, priority: 80, glyph: "만", tone: "mint",
   },
   {
-    id: "area", name: "평수·제곱미터 변환기", shortName: "평수 변환", category: "단위·문서",
-    description: "평과 ㎡를 서로 간편하게 변환", path: "/unit/area",
-    keywords: ["평수", "제곱미터", "평", "m2", "㎡", "아파트면적"], popular: true, priority: 90, glyph: "㎡", tone: "blue",
+    id: "currency", name: "실시간 환율 변환기", shortName: "환율 변환", category: "단위·문서",
+    description: "30개 주요 통화를 최신 기준환율로 변환", path: "/unit/currency",
+    keywords: ["환율", "환전", "달러", "원화", "엔화", "유로", "위안", "외화", "currency", "exchange rate"], popular: true, priority: 93, glyph: "$", tone: "mint",
+  },
+  {
+    id: "length", name: "길이 변환기", shortName: "길이 변환", category: "단위·문서",
+    description: "미터, 인치, 피트, 마일 등 13개 단위 변환", path: "/unit/length",
+    keywords: ["길이", "거리", "미터", "센티미터", "인치", "피트", "야드", "마일", "해리", "length"], priority: 91, glyph: "↔", tone: "blue",
+  },
+  {
+    id: "area", name: "면적·평수 변환기", shortName: "면적 변환", category: "단위·문서",
+    description: "평, ㎡, 헥타르, 에이커 등 11개 단위 변환", path: "/unit/area",
+    keywords: ["면적", "평수", "제곱미터", "평", "m2", "㎡", "아파트면적", "헥타르", "에이커"], popular: true, priority: 90, glyph: "㎡", tone: "blue",
+  },
+  {
+    id: "volume", name: "부피·용량 변환기", shortName: "부피 변환", category: "단위·문서",
+    description: "리터, 갤런, 컵, 큰술 등 15개 단위 변환", path: "/unit/volume",
+    keywords: ["부피", "용량", "리터", "밀리리터", "갤런", "컵", "큰술", "작은술", "세제곱미터", "volume"], priority: 89, glyph: "L", tone: "violet",
   },
   {
     id: "characters", name: "글자 수 계산기", shortName: "글자 수", category: "단위·문서",
