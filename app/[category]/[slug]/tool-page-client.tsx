@@ -188,9 +188,35 @@ function HourlyCalculator() {
 
 type AddressItem = { roadAddr?: string; jibunAddr?: string; engAddr?: string; zipNo?: string };
 
+function splitInternationalAddress(item: AddressItem, addressLine2: string) {
+  const parts = (item.engAddr || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const addressLine1 = parts[0] || "";
+  const region = parts.length > 1 ? parts[parts.length - 1] : "";
+  const city = parts.length > 2 ? parts.slice(1, -1).join(", ") : parts[1] || "";
+  const fields = [
+    { label: "Address line 1", value: addressLine1, hint: "도로명·건물번호" },
+    { label: "Address line 2", value: addressLine2.trim(), hint: "아파트·동·층·호 (선택)" },
+    { label: "City / Locality", value: city, hint: "도시·시군구" },
+    { label: "State / Province / Region", value: region, hint: "시·도" },
+    { label: "ZIP / Postal code", value: item.zipNo || "", hint: "우편번호" },
+    { label: "Country / Region", value: "South Korea", hint: "국가" },
+  ];
+  const mailingLabel = [
+    addressLine1,
+    addressLine2.trim(),
+    [city, region, item.zipNo].filter(Boolean).join(", "),
+    "South Korea",
+  ].filter(Boolean).join("\n");
+  return { fields, mailingLabel };
+}
+
 function AddressCalculator() {
   const [mode, setMode] = useState<"ko" | "en">("ko");
   const [query, setQuery] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
   const [items, setItems] = useState<AddressItem[]>([]);
   const [status, setStatus] = useState("");
   async function search(event: FormEvent) {
@@ -212,7 +238,7 @@ function AddressCalculator() {
     if (value) await navigator.clipboard.writeText(value);
   }
   return (
-    <CalculatorShell note="행정안전부 도로명주소 API를 사용합니다. 동·층·호 등 상세주소는 결과를 복사한 뒤 직접 덧붙여 주세요.">
+    <CalculatorShell note="행정안전부 도로명주소 API를 사용합니다. 해외 사이트의 국가 선택 목록에서는 South Korea 또는 Korea, Republic of를 선택하세요.">
       <div className="segmented">
         <button className={mode === "ko" ? "active" : ""} onClick={() => setMode("ko")}>한글 주소로 찾기</button>
         <button className={mode === "en" ? "active" : ""} onClick={() => setMode("en")}>영문 주소로 찾기</button>
@@ -221,16 +247,60 @@ function AddressCalculator() {
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={mode === "ko" ? "예: 세종대로 110" : "예: 110 Sejong-daero"} />
         <button type="submit">주소 검색</button>
       </form>
+      <label className="address-detail-field">
+        <span>영문 상세주소 <small>선택</small></span>
+        <input
+          value={addressLine2}
+          onChange={(event) => setAddressLine2(event.target.value)}
+          placeholder="예: Apt 101-1001"
+          autoComplete="address-line2"
+        />
+        <em>아파트·동·층·호는 검색 결과에 포함되지 않으므로 영문으로 직접 입력해 주세요.</em>
+      </label>
       {status && <p className="status-message">{status}</p>}
       <div className="address-results">
-        {items.map((item, index) => (
-          <article key={`${item.roadAddr}-${index}`}>
-            <span className="zip">우편번호 {item.zipNo}</span>
-            <h3>{item.roadAddr || item.jibunAddr}</h3>
-            <p>{item.engAddr}</p>
-            <div><button onClick={() => copy(item.roadAddr)}>한글 복사</button><button onClick={() => copy(item.engAddr)}>영문 복사</button></div>
-          </article>
-        ))}
+        {items.map((item, index) => {
+          const international = splitInternationalAddress(item, addressLine2);
+          return (
+            <article key={`${item.roadAddr}-${index}`}>
+              <span className="zip">우편번호 {item.zipNo}</span>
+              <h3>{item.roadAddr || item.jibunAddr}</h3>
+              <p>{item.engAddr}</p>
+              <div className="address-actions">
+                <button type="button" onClick={() => copy(item.roadAddr)}>한글 주소 복사</button>
+                <button type="button" onClick={() => copy(international.mailingLabel)}>전체 영문 주소 복사</button>
+              </div>
+              <section className="international-address" aria-label="미국식 영문 주소 입력 항목">
+                <div className="international-address-heading">
+                  <div>
+                    <strong>미국식 영문 주소 입력 항목</strong>
+                    <span>해외 웹사이트의 같은 이름 입력란에 복사하세요.</span>
+                  </div>
+                  <button type="button" onClick={() => copy(international.mailingLabel)}>전체 복사</button>
+                </div>
+                <dl>
+                  {international.fields.map((field) => (
+                    <div key={field.label}>
+                      <dt><span>{field.label}</span><small>{field.hint}</small></dt>
+                      <dd className={field.value ? "" : "empty"}>
+                        <span>{field.value || "직접 입력"}</span>
+                        {field.value && (
+                          <button
+                            type="button"
+                            onClick={() => copy(field.value)}
+                            aria-label={`${field.label} 복사`}
+                          >
+                            복사
+                          </button>
+                        )}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            </article>
+          );
+        })}
       </div>
     </CalculatorShell>
   );

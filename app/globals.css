@@ -195,14 +195,32 @@ button { color: inherit; }
 .address-search input:focus { border-color: #7aa2f3; box-shadow: 0 0 0 3px rgba(40,100,220,.08); }
 .address-search button { padding: 0 22px; border: 0; border-radius: 12px; background: var(--brand); color: #fff; font-weight: 700; cursor: pointer; }
 .address-search button:hover { background: var(--brand-dark); }
+.address-detail-field { display: grid; gap: 7px; margin-top: 14px; }
+.address-detail-field > span { color: #344054; font-size: 13px; font-weight: 700; }
+.address-detail-field > span small { margin-left: 5px; color: #98a2b3; font-size: 11px; font-weight: 600; }
+.address-detail-field input { height: 50px; padding: 0 14px; border: 1px solid #dce1e9; border-radius: 12px; outline: 0; font-size: 15px; }
+.address-detail-field input:focus { border-color: #7aa2f3; box-shadow: 0 0 0 3px rgba(40,100,220,.08); }
+.address-detail-field em { color: #7c8799; font-size: 11px; font-style: normal; line-height: 1.5; }
 .status-message { margin: 14px 2px 0; color: #6d7788; font-size: 14px; }
 .address-results { display: grid; gap: 10px; margin-top: 16px; }
 .address-results article { padding: 20px; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
 .address-results .zip { color: var(--brand); font-size: 12px; font-weight: 700; }
 .address-results h3 { margin: 5px 0 2px; font-size: 16px; }
 .address-results p { margin: 0 0 13px; color: var(--muted); font-size: 14px; }
-.address-results article div { display: flex; gap: 7px; }
+.address-actions { display: flex; flex-wrap: wrap; gap: 7px; }
 .address-results button { padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; font-size: 12px; font-weight: 650; }
+.international-address { margin-top: 18px; padding: 16px; background: #f8faff; border: 1px solid #e5ebf7; border-radius: 12px; }
+.international-address-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding-bottom: 13px; border-bottom: 1px solid #e5ebf7; }
+.international-address-heading strong { display: block; color: #24324a; font-size: 14px; }
+.international-address-heading span { display: block; margin-top: 3px; color: #7c8799; font-size: 11px; line-height: 1.5; }
+.international-address dl { margin: 0; }
+.international-address dl > div { display: grid; grid-template-columns: minmax(150px, .8fr) minmax(0, 1.4fr); gap: 16px; padding: 12px 0; border-bottom: 1px solid #e9edf5; }
+.international-address dl > div:last-child { padding-bottom: 0; border-bottom: 0; }
+.international-address dt span { display: block; color: #536078; font-size: 12px; font-weight: 700; }
+.international-address dt small { display: block; margin-top: 2px; color: #98a2b3; font-size: 10px; }
+.international-address dd { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; margin: 0; color: #17233a; font-size: 13px; font-weight: 650; word-break: break-word; }
+.international-address dd.empty { color: #98a2b3; font-weight: 500; }
+.international-address dd button { flex: 0 0 auto; padding: 5px 8px; background: #fff; color: var(--brand); }
 .textarea-field textarea { width: 100%; min-height: 180px; resize: vertical; margin-bottom: 16px; padding: 15px; border: 1px solid #dce1e9; border-radius: 12px; outline: 0; line-height: 1.7; }
 .textarea-field textarea:focus { border-color: #7aa2f3; box-shadow: 0 0 0 3px rgba(40,100,220,.08); }
 .privacy-note { display: flex; gap: 12px; margin: 18px 0 62px; padding: 16px 18px; background: #f2faf8; border-radius: 13px; }
@@ -283,6 +301,10 @@ footer small { color: #98a2b3; font-size: 12px; }
   .result-value { font-size: 35px; }
   .address-search { grid-template-columns: 1fr; }
   .address-search button { height: 52px; }
+  .international-address { padding: 14px; }
+  .international-address-heading { align-items: center; }
+  .international-address dl > div { grid-template-columns: 1fr; gap: 7px; }
+  .international-address dt small { display: inline; margin: 0 0 0 5px; }
   .privacy-note { margin-bottom: 52px; }
   .policy-page { width: calc(100% - 32px); margin-top: 36px; }
   .policy-page h1 { font-size: 31px; }
