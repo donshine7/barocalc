@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
+import { guides } from "./guides";
 import { tools } from "./tools";
 
-const siteUrl = (process.env.SITE_URL || "https://barocalc-korea.donshine7.chatgpt.site").replace(/\/$/, "");
+const siteUrl = (process.env.SITE_URL || "https://barocalc.co.kr").replace(/\/$/, "");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  const staticPages = ["", "/about", "/terms", "/privacy"];
+  const staticPages = ["", "/guides", "/about", "/terms", "/privacy"];
   return [
     ...staticPages.map((path) => ({
       url: `${siteUrl}${path}`,
@@ -18,6 +19,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "monthly" as const,
       priority: tool.popular ? 0.9 : 0.7,
+    })),
+    ...guides.map((guide) => ({
+      url: `${siteUrl}/guides/${guide.slug}`,
+      lastModified: new Date(guide.updatedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
     })),
   ];
 }

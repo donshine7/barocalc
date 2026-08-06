@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { guides as practicalGuides } from "../../guides";
 import SharePanel from "../../share-panel";
 import { toolFaqs } from "../../tool-faqs";
 import { tools, type Tool } from "../../tools";
@@ -584,6 +585,7 @@ export default function ToolPageClient({ tool }: { tool: Tool }) {
   const related = tools.filter((item) => item.id !== tool.id && item.category === tool.category).slice(0, 3);
   const guides = toolGuides[tool.id] || [];
   const faqs = toolFaqs[tool.id] || [];
+  const practicalGuide = practicalGuides.find((guide) => guide.toolId === tool.id);
   return (
     <main>
       <header className="site-header">
@@ -623,6 +625,12 @@ export default function ToolPageClient({ tool }: { tool: Tool }) {
             </div>
           </section>
         )}
+        {practicalGuide && (
+          <aside className="tool-guide-link">
+            <div><span>관련 가이드</span><strong>{practicalGuide.title}</strong><p>{practicalGuide.description}</p></div>
+            <Link href={`/guides/${practicalGuide.slug}`}>가이드 읽기 →</Link>
+          </aside>
+        )}
         <section className="related-section">
           <h2>함께 쓰면 좋은 도구</h2>
           <div>
@@ -633,7 +641,7 @@ export default function ToolPageClient({ tool }: { tool: Tool }) {
       <footer>
         <Link href="/" className="brand footer-brand"><span className="brand-mark">=</span><span>바로계산</span></Link>
         <p>복잡한 계산을 가장 간단하게.</p>
-        <nav><Link href="/">도구 검색</Link><Link href="/about">사이트 소개</Link><Link href="/terms">이용약관</Link><Link href="/privacy">개인정보처리방침</Link></nav>
+        <nav><Link href="/">도구 검색</Link><Link href="/guides">생활 가이드</Link><Link href="/about">사이트 소개</Link><Link href="/terms">이용약관</Link><Link href="/privacy">개인정보처리방침</Link></nav>
         <small>© 2026 바로계산. 계산 결과는 참고용입니다.</small>
       </footer>
     </main>

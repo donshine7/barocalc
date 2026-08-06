@@ -67,3 +67,26 @@ test("server-renders currency and Korean-to-English address tools", async () => 
   assert.match(addressHtml, /한글 주소 → 영문 주소 변환기/);
   assert.match(addressHtml, /한글 주소로 찾기/);
 });
+
+test("server-renders practical guides and connects them to calculators", async () => {
+  const guideResponse = await render("/guides/84-square-meter-to-pyeong");
+  assert.equal(guideResponse.status, 200);
+  const guideHtml = await guideResponse.text();
+  assert.match(guideHtml, /84㎡는 몇 평일까/);
+  assert.match(guideHtml, /전용면적·공급면적·계약면적/);
+  assert.match(guideHtml, /㎡와 평을 바로 변환하기/);
+  assert.match(guideHtml, /application\/ld\+json/);
+
+  const areaResponse = await render("/unit/area");
+  const areaHtml = await areaResponse.text();
+  assert.match(areaHtml, /관련 가이드/);
+  assert.match(areaHtml, /84㎡는 몇 평일까/);
+});
+
+test("sitemap publishes the custom domain and practical guides", async () => {
+  const response = await render("/sitemap.xml");
+  assert.equal(response.status, 200);
+  const xml = await response.text();
+  assert.match(xml, /https:\/\/barocalc\.co\.kr\/guides\/salary-5000-net-pay/);
+  assert.doesNotMatch(xml, /chatgpt\.site/);
+});

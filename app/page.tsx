@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { guides } from "./guides";
 import SharePanel from "./share-panel";
 import { categories, tools, type Tool } from "./tools";
 
@@ -157,6 +158,25 @@ export default function Home() {
             </div>
           </section>
 
+          <section className="insight-section section-shell">
+            <div className="section-heading">
+              <span>Practical guides</span>
+              <h2>계산 결과를 더 잘 이해하는 법</h2>
+              <p>실제 상황에서 자주 헷갈리는 기준을 짧고 정확하게 정리했어요.</p>
+            </div>
+            <div className="insight-grid">
+              {guides.map((guide) => (
+                <Link href={`/guides/${guide.slug}`} key={guide.slug}>
+                  <span>{guide.category} · {guide.readTime}</span>
+                  <strong>{guide.title}</strong>
+                  <p>{guide.description}</p>
+                  <i>읽어보기 →</i>
+                </Link>
+              ))}
+            </div>
+            <Link href="/guides" className="all-guide-link">생활 계산 가이드 전체 보기 →</Link>
+          </section>
+
           <div className="home-share section-shell">
             <SharePanel
               title="바로계산 — 매일 쓰는 계산 도구"
@@ -171,7 +191,7 @@ export default function Home() {
       <footer>
         <Link href="/" className="brand footer-brand"><span className="brand-mark">=</span><span>바로계산</span></Link>
         <p>입력한 계산 값은 서버에 저장하지 않습니다.</p>
-        <nav><a href="#all-tools">전체 도구</a><Link href="/about">사이트 소개</Link><Link href="/terms">이용약관</Link><Link href="/privacy">개인정보처리방침</Link></nav>
+        <nav><a href="#all-tools">전체 도구</a><Link href="/guides">생활 가이드</Link><Link href="/about">사이트 소개</Link><Link href="/terms">이용약관</Link><Link href="/privacy">개인정보처리방침</Link></nav>
         <small>© 2026 바로계산. 계산 결과는 참고용입니다.</small>
       </footer>
     </main>
