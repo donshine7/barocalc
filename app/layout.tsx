@@ -9,24 +9,29 @@ export async function generateMetadata(): Promise<Metadata> {
   const origin = `${protocol}://${host}`;
   return {
     metadataBase: new URL(origin),
+    applicationName: "바로계산",
     title: {
       default: "바로계산 — 매일 쓰는 계산 도구",
       template: "%s | 바로계산",
     },
     description: "연봉 실수령액, 한글·영문 주소, 퍼센트, 날짜, 평수 등 일상에 필요한 계산기와 변환 도구를 빠르게 이용하세요.",
+    keywords: ["계산기", "연봉 실수령액", "영문 주소 변환", "환율", "평수 계산", "날짜 계산"],
     alternates: { canonical: "/" },
+    robots: { index: true, follow: true },
     openGraph: {
       title: "바로계산 — 매일 쓰는 계산 도구",
       description: "필요한 계산을 검색하고 바로 사용하세요.",
       type: "website",
       locale: "ko_KR",
-      images: [{ url: `${origin}/og.png`, width: 1200, height: 630, alt: "바로계산 — 필요한 계산을 바로 찾아보세요" }],
+      url: origin,
+      siteName: "바로계산",
+      images: [{ url: `${origin}/og-v2.png`, width: 1731, height: 909, alt: "바로계산 — 필요한 계산을 3초 만에" }],
     },
     twitter: {
       card: "summary_large_image",
       title: "바로계산 — 매일 쓰는 계산 도구",
       description: "필요한 계산을 검색하고 바로 사용하세요.",
-      images: [`${origin}/og.png`],
+      images: [`${origin}/og-v2.png`],
     },
   };
 }

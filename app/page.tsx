@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import SharePanel from "./share-panel";
 import { categories, tools, type Tool } from "./tools";
 
 function normalize(value: string) {
@@ -155,6 +156,15 @@ export default function Home() {
               ))}
             </div>
           </section>
+
+          <div className="home-share section-shell">
+            <SharePanel
+              title="바로계산 — 매일 쓰는 계산 도구"
+              text="연봉, 영문 주소, 환율, 평수 등 필요한 계산을 가입 없이 바로 사용해 보세요."
+              path="/"
+              compact
+            />
+          </div>
         </>
       )}
 

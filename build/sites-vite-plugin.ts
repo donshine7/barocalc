@@ -25,6 +25,10 @@ export function sites(): Plugin {
       root = config.root;
     },
     async closeBundle() {
+      // Vite runs this hook once per build environment. Packaging the shared
+      // directory from every environment races on Windows/OneDrive.
+      if (this.environment?.name && this.environment.name !== "client") return;
+
       const outputDirectory = resolve(root, "dist", ".openai");
       const hostingConfig = resolve(root, ".openai", "hosting.json");
       const drizzleSource = resolve(root, "drizzle");

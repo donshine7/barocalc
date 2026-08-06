@@ -23,6 +23,7 @@ test("server-renders the calculator search landing page", async () => {
   assert.match(html, /바로계산/);
   assert.match(html, /계산기나 키워드를 검색하세요/);
   assert.match(html, /많이 사용하는 도구/);
+  assert.match(html, /친구에게 바로계산 알려주기/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
 });
 
@@ -35,6 +36,9 @@ test("server-renders an independent salary calculator route", async () => {
   assert.match(html, /부양가족 수 \(본인 포함\)/);
   assert.match(html, /적용 소득세율/);
   assert.match(html, /입력값을 저장하지 않아요/);
+  assert.match(html, /연봉 실수령액 계산기 친구에게 공유하기/);
+  assert.match(html, /부양가족 수에는 본인도 포함하나요/);
+  assert.match(html, /application\/ld\+json/);
 });
 
 test("server-renders the expanded unit converters", async () => {

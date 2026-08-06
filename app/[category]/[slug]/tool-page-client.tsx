@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import SharePanel from "../../share-panel";
+import { toolFaqs } from "../../tool-faqs";
 import { tools, type Tool } from "../../tools";
 import { toolGuides } from "../../tool-guides";
 
@@ -581,6 +583,7 @@ function renderCalculator(id: string) {
 export default function ToolPageClient({ tool }: { tool: Tool }) {
   const related = tools.filter((item) => item.id !== tool.id && item.category === tool.category).slice(0, 3);
   const guides = toolGuides[tool.id] || [];
+  const faqs = toolFaqs[tool.id] || [];
   return (
     <main>
       <header className="site-header">
@@ -595,12 +598,31 @@ export default function ToolPageClient({ tool }: { tool: Tool }) {
         </section>
         {renderCalculator(tool.id)}
         <div className="privacy-note"><span>✓</span><div><strong>입력값을 저장하지 않아요</strong><p>계산은 사용 중인 브라우저에서 처리되며 입력한 값은 서버에 저장하지 않습니다.</p></div></div>
+        <SharePanel
+          title={tool.name}
+          text={`${tool.description}. 가입 없이 바로 사용할 수 있어요.`}
+          path={tool.path}
+        />
         <section className="guide-section">
           <span>Guide</span>
           <h2>{tool.name} 사용 방법</h2>
           {guides.map((guide) => <p key={guide}>{guide}</p>)}
           {tool.id === "salary" && <p>2026년 국민연금 근로자 부담률 4.75%, 건강보험 직장가입자 근로자 부담률 3.595%를 반영했습니다. 개인별 비과세 항목과 부양가족, 세액공제에 따라 실제 소득세는 달라집니다.</p>}
         </section>
+        {faqs.length > 0 && (
+          <section className="faq-section">
+            <span>FAQ</span>
+            <h2>자주 묻는 질문</h2>
+            <div>
+              {faqs.map((faq) => (
+                <details key={faq.question}>
+                  <summary>{faq.question}</summary>
+                  <p>{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
         <section className="related-section">
           <h2>함께 쓰면 좋은 도구</h2>
           <div>
