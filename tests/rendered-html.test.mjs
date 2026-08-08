@@ -24,7 +24,16 @@ test("server-renders the calculator search landing page", async () => {
   assert.match(html, /계산기나 키워드를 검색하세요/);
   assert.match(html, /많이 사용하는 도구/);
   assert.match(html, /친구에게 바로계산 알려주기/);
+  assert.match(html, /G-EL89Q5P6SW/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
+});
+
+test("publishes the Analytics disclosure", async () => {
+  const response = await render("/privacy");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Google Analytics 4/);
+  assert.match(html, /계산기에 입력한 연봉, 주소, 금액 등의 값은 Analytics 이벤트로 전송하지 않습니다/);
 });
 
 test("server-renders an independent salary calculator route", async () => {
