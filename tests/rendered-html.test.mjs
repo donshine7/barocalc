@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -24,8 +25,15 @@ test("server-renders the calculator search landing page", async () => {
   assert.match(html, /계산기나 키워드를 검색하세요/);
   assert.match(html, /많이 사용하는 도구/);
   assert.match(html, /친구에게 바로계산 알려주기/);
-  assert.match(html, /G-EL89Q5P6SW/);
+  assert.match(html, /google-analytics-/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
+});
+
+test("bundles the GA4 measurement ID in the browser analytics module", async () => {
+  const assetsDirectory = new URL("../dist/client/assets/", import.meta.url);
+  const analyticsAsset = (await readdir(assetsDirectory)).find((name) => name.startsWith("google-analytics-") && name.endsWith(".js"));
+  assert.ok(analyticsAsset);
+  assert.match(await readFile(new URL(analyticsAsset, assetsDirectory), "utf8"), /G-EL89Q5P6SW/);
 });
 
 test("publishes the Analytics disclosure", async () => {
