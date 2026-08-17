@@ -69,8 +69,7 @@ export default async function ToolPage({
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "홈", item: siteUrl },
-        { "@type": "ListItem", position: 2, name: tool.category },
-        { "@type": "ListItem", position: 3, name: tool.name, item: `${siteUrl}${tool.path}` },
+        { "@type": "ListItem", position: 2, name: tool.name, item: `${siteUrl}${tool.path}` },
       ],
     },
   ];

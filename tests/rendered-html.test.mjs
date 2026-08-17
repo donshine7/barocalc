@@ -56,6 +56,20 @@ test("server-renders an independent salary calculator route", async () => {
   assert.match(html, /연봉 실수령액 계산기 친구에게 공유하기/);
   assert.match(html, /부양가족 수에는 본인도 포함하나요/);
   assert.match(html, /application\/ld\+json/);
+
+  const structuredDataMatch = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/);
+  assert.ok(structuredDataMatch);
+  const structuredData = JSON.parse(structuredDataMatch[1]);
+  const breadcrumb = structuredData.find((item) => item["@type"] === "BreadcrumbList");
+  assert.deepEqual(breadcrumb.itemListElement, [
+    { "@type": "ListItem", position: 1, name: "홈", item: "https://barocalc.co.kr" },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "연봉 실수령액 계산기",
+      item: "https://barocalc.co.kr/salary/net-pay",
+    },
+  ]);
 });
 
 test("server-renders the expanded unit converters", async () => {
