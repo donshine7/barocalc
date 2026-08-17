@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { trackAnalyticsEvent } from "../../google-analytics";
 import { guides as practicalGuides } from "../../guides";
 import SharePanel from "../../share-panel";
 import { toolFaqs } from "../../tool-faqs";
@@ -63,8 +64,14 @@ function ResultCard({
 }
 
 function CalculatorShell({ children, note }: { children: ReactNode; note?: string }) {
+  const hasTrackedUse = useRef(false);
+  function trackFirstUse() {
+    if (hasTrackedUse.current) return;
+    hasTrackedUse.current = true;
+    trackAnalyticsEvent("calculator_use", { tool_path: window.location.pathname });
+  }
   return (
-    <div className="calculator-panel">
+    <div className="calculator-panel" onInputCapture={trackFirstUse} onChangeCapture={trackFirstUse}>
       {children}
       {note && <p className="form-note">{note}</p>}
     </div>
@@ -231,14 +238,22 @@ function AddressCalculator() {
       const response = await fetch(`/api/address?q=${encodeURIComponent(query)}&mode=${mode}`);
       const body = await response.json() as { items?: AddressItem[]; message?: string };
       if (!response.ok) throw new Error(body.message || "주소 검색을 사용할 수 없습니다.");
-      setItems(body.items || []);
-      setStatus(body.items?.length ? "" : "일치하는 주소가 없습니다. 도로명과 건물번호를 함께 입력해 보세요.");
+      const results = body.items || [];
+      setItems(results);
+      setStatus(results.length ? "" : "일치하는 주소가 없습니다. 도로명과 건물번호를 함께 입력해 보세요.");
+      trackAnalyticsEvent("address_search", {
+        search_language: mode,
+        search_outcome: results.length ? "results" : "no_results",
+        result_count: results.length,
+      });
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "주소 검색 중 문제가 발생했습니다.");
     }
   }
-  async function copy(value?: string) {
-    if (value) await navigator.clipboard.writeText(value);
+  async function copy(value: string | undefined, resultType: string) {
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+    trackAnalyticsEvent("result_copy", { tool_path: "/life/address", result_type: resultType });
   }
   return (
     <CalculatorShell note="행정안전부 도로명주소 API를 사용합니다. 해외 사이트의 국가 선택 목록에서는 South Korea 또는 Korea, Republic of를 선택하세요.">
@@ -270,8 +285,8 @@ function AddressCalculator() {
               <h3>{item.roadAddr || item.jibunAddr}</h3>
               <p>{item.engAddr}</p>
               <div className="address-actions">
-                <button type="button" onClick={() => copy(item.roadAddr)}>한글 주소 복사</button>
-                <button type="button" onClick={() => copy(international.mailingLabel)}>전체 영문 주소 복사</button>
+                <button type="button" onClick={() => copy(item.roadAddr, "korean_address")}>한글 주소 복사</button>
+                <button type="button" onClick={() => copy(international.mailingLabel, "full_english_address")}>전체 영문 주소 복사</button>
               </div>
               <section className="international-address" aria-label="미국식 영문 주소 입력 항목">
                 <div className="international-address-heading">
@@ -279,7 +294,7 @@ function AddressCalculator() {
                     <strong>미국식 영문 주소 입력 항목</strong>
                     <span>해외 웹사이트의 같은 이름 입력란에 복사하세요.</span>
                   </div>
-                  <button type="button" onClick={() => copy(international.mailingLabel)}>전체 복사</button>
+                  <button type="button" onClick={() => copy(international.mailingLabel, "full_english_address")}>전체 복사</button>
                 </div>
                 <dl>
                   {international.fields.map((field) => (
@@ -290,7 +305,7 @@ function AddressCalculator() {
                         {field.value && (
                           <button
                             type="button"
-                            onClick={() => copy(field.value)}
+                            onClick={() => copy(field.value, `field_${field.label.toLowerCase().replaceAll(/[^a-z0-9]+/g, "_")}`)}
                             aria-label={`${field.label} 복사`}
                           >
                             복사

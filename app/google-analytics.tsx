@@ -4,12 +4,21 @@ import { useEffect } from "react";
 
 const GA_MEASUREMENT_ID = "G-EL89Q5P6SW";
 
+type AnalyticsParameters = Record<string, string | number | boolean>;
+
 declare global {
   interface Window {
     dataLayer?: unknown[][];
     gtag?: (...args: unknown[]) => void;
     __barocalcAnalyticsInitialized?: boolean;
   }
+}
+
+export function trackAnalyticsEvent(eventName: string, parameters: AnalyticsParameters = {}) {
+  if (typeof window === "undefined") return;
+  window.dataLayer = window.dataLayer || [];
+  const gtag = window.gtag || ((...args: unknown[]) => window.dataLayer?.push(args));
+  gtag("event", eventName, parameters);
 }
 
 export default function GoogleAnalytics() {
