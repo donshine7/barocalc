@@ -104,7 +104,8 @@ function calculateProgressiveTax(taxBase: number) {
 function estimateSalary(annualSalary: number, monthlyNonTax: number, familyCount: number) {
   const monthlyGross = annualSalary / 12;
   const insured = Math.max(0, monthlyGross - monthlyNonTax);
-  const pension = Math.min(insured, 6_370_000) * 0.0475;
+  const pensionBase = insured > 0 ? Math.min(Math.max(insured, 410_000), 6_590_000) : 0;
+  const pension = pensionBase * 0.0475;
   const health = insured * 0.03595;
   const longCare = health * 0.1314;
   const employment = insured * 0.009;
@@ -132,6 +133,8 @@ function estimateSalary(annualSalary: number, monthlyNonTax: number, familyCount
   };
 }
 
+const SALARY_PRESETS = [30_000_000, 40_000_000, 50_000_000, 60_000_000, 80_000_000, 100_000_000];
+
 function SalaryCalculator({ monthly = false }: { monthly?: boolean }) {
   const [amount, setAmount] = useState(monthly ? "3500000" : "50000000");
   const [nonTax, setNonTax] = useState("200000");
@@ -141,8 +144,24 @@ function SalaryCalculator({ monthly = false }: { monthly?: boolean }) {
     () => estimateSalary(annual, parseNumber(nonTax), Math.max(1, parseNumber(familyCount))),
     [annual, nonTax, familyCount],
   );
+  function applySalaryPreset(value: number) {
+    setAmount(String(value));
+    trackAnalyticsEvent("calculator_preset", { tool_path: "/salary/net-pay", preset_group: "annual_salary" });
+  }
   return (
     <CalculatorShell note="2026년 근로자 부담 보험료율과 기본 인적공제(본인·배우자·공제대상 부양가족 1명당 연 150만원)를 반영한 예상치입니다. 간이세액표와 개인별 세액공제에 따라 실제 급여명세와 다를 수 있습니다.">
+      {!monthly && (
+        <div className="quick-choice-group" aria-label="대표 연봉 빠른 선택">
+          <span>대표 연봉</span>
+          <div>
+            {SALARY_PRESETS.map((preset) => (
+              <button type="button" key={preset} onClick={() => applySalaryPreset(preset)}>
+                {preset === 100_000_000 ? "1억" : `${preset / 10_000_000}천만`}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="form-grid">
         <Field label={monthly ? "세전 월급" : "연봉"} value={amount} onChange={setAmount} suffix="원" />
         <Field label="월 비과세액" value={nonTax} onChange={setNonTax} suffix="원" />
@@ -165,6 +184,15 @@ function SalaryCalculator({ monthly = false }: { monthly?: boolean }) {
           ["적용 소득세율", `${result.marginalRate * 100}%`],
         ]}
       />
+      <aside className="method-card">
+        <strong>2026년 적용 기준 · 2026-08-17 확인</strong>
+        <p>국민연금 근로자 4.75%(기준소득월액 41만~659만원), 건강보험 3.595%, 장기요양은 건강보험료의 약 13.14%, 고용보험 0.9%를 적용합니다.</p>
+        <nav aria-label="연봉 계산 공식 근거">
+          <a href="https://www.nps.or.kr/pnsinfo/ntpsklg/getOHAF0038M0.do?menuId=MN24001113&tab=tab5" target="_blank" rel="noreferrer">국민연금공단 기준</a>
+          <a href="https://edi.nhis.or.kr/portal/images/popup/20251204_pop01longdesc.html" target="_blank" rel="noreferrer">건강보험공단 기준</a>
+          <a href="https://g.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7862&mi=6426" target="_blank" rel="noreferrer">국세청 간이세액표 안내</a>
+        </nav>
+      </aside>
     </CalculatorShell>
   );
 }
@@ -196,7 +224,9 @@ function HourlyCalculator() {
   );
 }
 
-type AddressItem = { roadAddr?: string; jibunAddr?: string; engAddr?: string; zipNo?: string };
+type AddressItem = { roadAddr?: string; jibunAddr?: string; engAddr?: string; zipNo?: string; bdNm?: string };
+
+const ADDRESS_EXAMPLES = ["세종대로 110", "테헤란로 152", "서울 강남구 삼성로 212"];
 
 function splitInternationalAddress(item: AddressItem, addressLine2: string) {
   const parts = (item.engAddr || "")
@@ -229,26 +259,35 @@ function AddressCalculator() {
   const [addressLine2, setAddressLine2] = useState("");
   const [items, setItems] = useState<AddressItem[]>([]);
   const [status, setStatus] = useState("");
-  async function search(event: FormEvent) {
-    event.preventDefault();
-    if (query.trim().length < 2) return setStatus("주소를 두 글자 이상 입력해 주세요.");
+  async function runSearch(searchQuery: string, searchMode: "ko" | "en") {
+    if (searchQuery.trim().length < 2) return setStatus("주소를 두 글자 이상 입력해 주세요.");
     setStatus("공식 주소를 찾고 있어요…");
     setItems([]);
     try {
-      const response = await fetch(`/api/address?q=${encodeURIComponent(query)}&mode=${mode}`);
+      const response = await fetch(`/api/address?q=${encodeURIComponent(searchQuery)}&mode=${searchMode}`);
       const body = await response.json() as { items?: AddressItem[]; message?: string };
       if (!response.ok) throw new Error(body.message || "주소 검색을 사용할 수 없습니다.");
       const results = body.items || [];
       setItems(results);
       setStatus(results.length ? "" : "일치하는 주소가 없습니다. 도로명과 건물번호를 함께 입력해 보세요.");
       trackAnalyticsEvent("address_search", {
-        search_language: mode,
+        search_language: searchMode,
         search_outcome: results.length ? "results" : "no_results",
         result_count: results.length,
       });
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "주소 검색 중 문제가 발생했습니다.");
     }
+  }
+  async function search(event: FormEvent) {
+    event.preventDefault();
+    await runSearch(query, mode);
+  }
+  function applyAddressExample(example: string) {
+    setMode("ko");
+    setQuery(example);
+    trackAnalyticsEvent("calculator_preset", { tool_path: "/life/address", preset_group: "address_example" });
+    void runSearch(example, "ko");
   }
   async function copy(value: string | undefined, resultType: string) {
     if (!value) return;
@@ -260,6 +299,10 @@ function AddressCalculator() {
       <div className="segmented">
         <button className={mode === "ko" ? "active" : ""} onClick={() => setMode("ko")}>한글 주소로 찾기</button>
         <button className={mode === "en" ? "active" : ""} onClick={() => setMode("en")}>영문 주소로 찾기</button>
+      </div>
+      <div className="quick-choice-group" aria-label="주소 검색 예시">
+        <span>검색 예시</span>
+        <div>{ADDRESS_EXAMPLES.map((example) => <button type="button" key={example} onClick={() => applyAddressExample(example)}>{example}</button>)}</div>
       </div>
       <form className="address-search" onSubmit={search}>
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={mode === "ko" ? "예: 세종대로 110" : "예: 110 Sejong-daero"} />
@@ -275,15 +318,17 @@ function AddressCalculator() {
         />
         <em>아파트·동·층·호는 검색 결과에 포함되지 않으므로 영문으로 직접 입력해 주세요.</em>
       </label>
+      <p className="inline-privacy-note">검색어는 공식 주소 조회를 위해 전송되며 바로계산은 주소나 상세주소를 별도로 저장하지 않습니다.</p>
       {status && <p className="status-message">{status}</p>}
       <div className="address-results">
         {items.map((item, index) => {
           const international = splitInternationalAddress(item, addressLine2);
           return (
             <article key={`${item.roadAddr}-${index}`}>
-              <span className="zip">우편번호 {item.zipNo}</span>
+              <div className="address-result-meta"><span className="zip">우편번호 {item.zipNo}</span>{item.bdNm && <span>{item.bdNm}</span>}</div>
               <h3>{item.roadAddr || item.jibunAddr}</h3>
-              <p>{item.engAddr}</p>
+              {item.jibunAddr && item.jibunAddr !== item.roadAddr && <p className="jibun-address">지번 {item.jibunAddr}</p>}
+              <p className="english-address">{item.engAddr}</p>
               <div className="address-actions">
                 <button type="button" onClick={() => copy(item.roadAddr, "korean_address")}>한글 주소 복사</button>
                 <button type="button" onClick={() => copy(international.mailingLabel, "full_english_address")}>전체 영문 주소 복사</button>
@@ -448,14 +493,16 @@ function formatConverted(value: number) {
 }
 
 function UnitConverter({
-  units, defaultFrom, defaultTo, note,
+  units, defaultFrom, defaultTo, defaultAmount = "1", note, presets = [],
 }: {
   units: UnitDefinition[];
   defaultFrom: string;
   defaultTo: string;
+  defaultAmount?: string;
   note: string;
+  presets?: Array<{ label: string; value: string; from?: string; to?: string }>;
 }) {
-  const [amount, setAmount] = useState("1");
+  const [amount, setAmount] = useState(defaultAmount);
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
   const fromUnit = units.find((unit) => unit.code === from) || units[0];
@@ -465,8 +512,20 @@ function UnitConverter({
     setFrom(to);
     setTo(from);
   }
+  function applyPreset(preset: { label: string; value: string; from?: string; to?: string }) {
+    setAmount(preset.value);
+    if (preset.from) setFrom(preset.from);
+    if (preset.to) setTo(preset.to);
+    trackAnalyticsEvent("calculator_preset", { tool_path: window.location.pathname, preset_group: "popular_values" });
+  }
   return (
     <CalculatorShell note={note}>
+      {presets.length > 0 && (
+        <div className="quick-choice-group" aria-label="많이 찾는 값 빠른 선택">
+          <span>많이 찾는 면적</span>
+          <div>{presets.map((preset) => <button type="button" key={preset.label} onClick={() => applyPreset(preset)}>{preset.label}</button>)}</div>
+        </div>
+      )}
       <Field label="변환할 값" value={amount} onChange={setAmount} suffix={fromUnit.symbol} />
       <div className="unit-row">
         <label className="unit-field">
@@ -505,6 +564,13 @@ const CURRENCY_LABELS: Record<string, string> = {
 
 type ExchangeResponse = { date?: string; rates?: Record<string, number>; message?: string };
 
+const POPULAR_CURRENCY_PAIRS = [
+  { from: "USD", to: "KRW", amount: "100", label: "달러 → 원" },
+  { from: "JPY", to: "KRW", amount: "10000", label: "엔화 → 원" },
+  { from: "EUR", to: "KRW", amount: "100", label: "유로 → 원" },
+  { from: "CNY", to: "KRW", amount: "100", label: "위안 → 원" },
+];
+
 function CurrencyCalculator() {
   const [amount, setAmount] = useState("1000000");
   const [from, setFrom] = useState("KRW");
@@ -534,13 +600,36 @@ function CurrencyCalculator() {
   const codes = Object.keys(CURRENCY_LABELS).filter((code) => rates[code]);
   const converted = rates[from] && rates[to] ? parseNumber(amount) / rates[from] * rates[to] : 0;
   const resultFormatter = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 4 });
+  const amountPresets = from === "KRW"
+    ? [10_000, 100_000, 1_000_000]
+    : from === "JPY"
+      ? [1_000, 10_000, 100_000]
+      : [1, 10, 100, 1_000];
   function swap() {
     setFrom(to);
     setTo(from);
   }
+  function applyPair(pair: typeof POPULAR_CURRENCY_PAIRS[number]) {
+    setFrom(pair.from);
+    setTo(pair.to);
+    setAmount(pair.amount);
+    trackAnalyticsEvent("calculator_preset", { tool_path: "/unit/currency", preset_group: "currency_pair" });
+  }
+  function applyAmountPreset(value: number) {
+    setAmount(String(value));
+    trackAnalyticsEvent("calculator_preset", { tool_path: "/unit/currency", preset_group: "currency_amount" });
+  }
   return (
     <CalculatorShell note="유럽중앙은행(ECB) 기준환율을 이용한 참고용 환산입니다. 카드사·은행의 실시간 매매기준율, 수수료 및 환전 우대는 반영되지 않습니다.">
+      <div className="quick-choice-group" aria-label="인기 통화쌍 빠른 선택">
+        <span>인기 통화</span>
+        <div>{POPULAR_CURRENCY_PAIRS.map((pair) => <button type="button" key={pair.from} onClick={() => applyPair(pair)}>{pair.label}</button>)}</div>
+      </div>
       <Field label="환전할 금액" value={amount} onChange={setAmount} suffix={from} />
+      <div className="quick-choice-group compact" aria-label="대표 금액 빠른 선택">
+        <span>대표 금액</span>
+        <div>{amountPresets.map((value) => <button type="button" key={value} onClick={() => applyAmountPreset(value)}>{value.toLocaleString()}</button>)}</div>
+      </div>
       <div className="unit-row">
         <label className="unit-field">
           <span>보내는 통화</span>
@@ -589,7 +678,14 @@ function renderCalculator(id: string) {
     case "age": return <AgeCalculator />;
     case "currency": return <CurrencyCalculator />;
     case "length": return <UnitConverter units={LENGTH_UNITS} defaultFrom="m" defaultTo="ft" note="국제 단위계와 공인 환산계수를 기준으로 계산합니다. 전통 단위인 자·리는 관용 환산값입니다." />;
-    case "area": return <UnitConverter units={AREA_UNITS} defaultFrom="pyeong" defaultTo="m2" note="1평은 약 3.305785㎡입니다. 부동산 계약에서는 공시된 전용·공급면적을 함께 확인하세요." />;
+    case "area": return <UnitConverter
+      units={AREA_UNITS}
+      defaultAmount="84"
+      defaultFrom="m2"
+      defaultTo="pyeong"
+      presets={[59, 74, 84, 102, 114].map((value) => ({ label: `${value}㎡`, value: String(value), from: "m2", to: "pyeong" }))}
+      note="1평은 약 3.305785㎡입니다. 84㎡는 단순 환산 시 약 25.4평이며, 흔히 말하는 33~34평형은 공용면적을 더한 공급면적 기준입니다."
+    />;
     case "volume": return <UnitConverter units={VOLUME_UNITS} defaultFrom="l" defaultTo="gal" note="컵·큰술·작은술·갤런은 미국식 단위를 적용합니다. 영국식 단위와 값이 다를 수 있습니다." />;
     case "characters": return <CharacterCalculator />;
     default: return null;
@@ -624,7 +720,7 @@ export default function ToolPageClient({ tool }: { tool: Tool }) {
           <span>Guide</span>
           <h2>{tool.name} 사용 방법</h2>
           {guides.map((guide) => <p key={guide}>{guide}</p>)}
-          {tool.id === "salary" && <p>2026년 국민연금 근로자 부담률 4.75%, 건강보험 직장가입자 근로자 부담률 3.595%를 반영했습니다. 개인별 비과세 항목과 부양가족, 세액공제에 따라 실제 소득세는 달라집니다.</p>}
+          {tool.id === "salary" && <p>2026년 7월 기준 국민연금 근로자 부담률 4.75%와 기준소득월액 41만~659만원, 건강보험 직장가입자 근로자 부담률 3.595%를 반영했습니다. 개인별 비과세 항목과 부양가족, 세액공제에 따라 실제 소득세는 달라집니다.</p>}
         </section>
         {faqs.length > 0 && (
           <section className="faq-section">

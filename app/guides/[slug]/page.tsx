@@ -23,7 +23,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       locale: "ko_KR",
       publishedTime: `${guide.publishedAt}T00:00:00+09:00`,
       modifiedTime: `${guide.updatedAt}T00:00:00+09:00`,
-      images: [{ url: "/og-v2.png", width: 1731, height: 909, alt: `${guide.title} — 바로계산` }],
+      images: [],
+    },
+    twitter: {
+      card: "summary",
+      title: `${guide.title} | 바로계산`,
+      description: guide.description,
+      images: [],
     },
   };
 }

@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
       jibunAddr: item.jibunAddr,
       engAddr: item.roadAddr || item.engAddr,
       zipNo: item.zipNo,
+      bdNm: item.bdNm || item.bdNmEng,
     }));
     const uniqueItems = mappedItems.filter((item, index, items) => {
       const identity = `${item.zipNo}|${item.roadAddr}|${item.engAddr}`;

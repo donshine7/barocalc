@@ -29,13 +29,13 @@ export async function generateMetadata({
       type: "website",
       url: tool.path,
       locale: "ko_KR",
-      images: [{ url: "/og-v2.png", width: 1731, height: 909, alt: `${tool.name} — 바로계산` }],
+      images: [],
     },
     twitter: {
       card: "summary_large_image",
       title: `${tool.name} | 바로계산`,
       description: `${tool.description}. 무료로 바로 사용하세요.`,
-      images: ["/og-v2.png"],
+      images: [],
     },
   };
 }

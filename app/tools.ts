@@ -19,7 +19,7 @@ export const categories = ["급여·소득", "생활 계산", "날짜·시간", 
 export const tools: Tool[] = [
   {
     id: "salary", name: "연봉 실수령액 계산기", shortName: "연봉 계산기", category: "급여·소득",
-    description: "2026년 기준 예상 월급과 공제액 계산", path: "/salary/net-pay",
+    description: "2026년 보험료율·부양가족을 반영한 예상 월급과 공제액", path: "/salary/net-pay",
     keywords: ["연봉", "월급", "급여", "실수령액", "세후", "세전", "4대보험", "소득세", "salary", "pay"],
     popular: true, priority: 100, glyph: "₩", tone: "blue",
   },
@@ -40,7 +40,7 @@ export const tools: Tool[] = [
   },
   {
     id: "address", name: "한글 주소 → 영문 주소 변환기", shortName: "영문 주소 변환", category: "생활 계산",
-    description: "한글 도로명주소를 영문주소와 우편번호로 변환", path: "/life/address",
+    description: "공식 도로명주소를 영문주소·우편번호·해외 입력란으로 변환", path: "/life/address",
     keywords: ["주소", "주소변환", "한글주소", "영문주소", "영어주소", "한영주소", "도로명주소", "지번주소", "우편번호", "해외배송", "국제우편", "address", "postal code", "zip code"],
     popular: true, priority: 98, glyph: "A", tone: "mint",
   },
@@ -80,8 +80,8 @@ export const tools: Tool[] = [
     keywords: ["만나이", "나이", "생년월일", "연령", "age"], popular: true, priority: 80, glyph: "만", tone: "mint",
   },
   {
-    id: "currency", name: "최신 기준환율 변환기", shortName: "환율 변환", category: "단위·문서",
-    description: "30개 주요 통화를 최신 기준환율로 변환", path: "/unit/currency",
+    id: "currency", name: "환율 계산기 — 달러·엔화·유로 원화 변환", shortName: "환율 변환", category: "단위·문서",
+    description: "30개 주요 통화를 ECB 최신 기준환율로 변환", path: "/unit/currency",
     keywords: ["환율", "환전", "달러", "원화", "엔화", "유로", "위안", "외화", "currency", "exchange rate"], popular: true, priority: 93, glyph: "$", tone: "mint",
   },
   {
@@ -90,8 +90,8 @@ export const tools: Tool[] = [
     keywords: ["길이", "거리", "미터", "센티미터", "인치", "피트", "야드", "마일", "해리", "length"], priority: 91, glyph: "↔", tone: "blue",
   },
   {
-    id: "area", name: "면적·평수 변환기", shortName: "면적 변환", category: "단위·문서",
-    description: "평, ㎡, 헥타르, 에이커 등 11개 단위 변환", path: "/unit/area",
+    id: "area", name: "평수 계산기 — ㎡·평 면적 변환", shortName: "면적 변환", category: "단위·문서",
+    description: "84㎡ 등 인기 면적과 평·제곱미터·헥타르·에이커 변환", path: "/unit/area",
     keywords: ["면적", "평수", "제곱미터", "평", "m2", "㎡", "아파트면적", "헥타르", "에이커"], popular: true, priority: 90, glyph: "㎡", tone: "blue",
   },
   {
