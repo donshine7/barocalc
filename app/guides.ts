@@ -8,6 +8,8 @@ export type Guide = {
   slug: string;
   title: string;
   description: string;
+  seoTitle?: string;
+  seoDescription?: string;
   category: string;
   publishedAt: string;
   updatedAt: string;
@@ -108,6 +110,8 @@ export const guides: Guide[] = [
     slug: "84-square-meter-to-pyeong",
     title: "84㎡ 몇 평? 25.4평과 33·34평형의 차이",
     description: "84제곱미터는 단순 환산하면 약 25.4평입니다. 아파트에서 33·34평형으로 부르는 이유와 전용·공급면적 차이를 설명합니다.",
+    seoTitle: "84㎡는 몇 평? 25.4평·공급면적 33평형 차이",
+    seoDescription: "84㎡는 25.4평입니다. 전용 84㎡ 아파트가 33평·34평형으로 불리는 이유를 공급면적 기준으로 설명하고, 59·74·102·114㎡ 환산값도 확인하세요.",
     category: "면적",
     publishedAt: "2026-08-06",
     updatedAt: "2026-08-17",

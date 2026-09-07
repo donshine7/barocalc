@@ -11,13 +11,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const guide = getGuide(slug);
   if (!guide) return {};
+  const title = guide.seoTitle ?? guide.title;
+  const description = guide.seoDescription ?? guide.description;
   return {
-    title: guide.title,
-    description: guide.description,
+    title,
+    description,
     alternates: { canonical: `/guides/${guide.slug}` },
     openGraph: {
-      title: `${guide.title} | 바로계산`,
-      description: guide.description,
+      title: `${title} | 바로계산`,
+      description,
       type: "article",
       url: `/guides/${guide.slug}`,
       locale: "ko_KR",
@@ -27,8 +29,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
     twitter: {
       card: "summary",
-      title: `${guide.title} | 바로계산`,
-      description: guide.description,
+      title: `${title} | 바로계산`,
+      description,
       images: [],
     },
   };

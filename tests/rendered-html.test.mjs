@@ -122,7 +122,8 @@ test("server-renders practical guides and connects them to calculators", async (
   assert.match(guideHtml, /전용면적·공급면적·계약면적/);
   assert.match(guideHtml, /㎡와 평을 바로 변환하기/);
   assert.match(guideHtml, /application\/ld\+json/);
-  assert.match(guideHtml, /84㎡ 몇 평\? 25\.4평과 33·34평형의 차이 \| 바로계산/);
+  assert.match(guideHtml, /84㎡는 몇 평\? 25\.4평·공급면적 33평형 차이 \| 바로계산/);
+  assert.match(guideHtml, /전용 84㎡ 아파트가 33평·34평형으로 불리는 이유/);
   assert.doesNotMatch(guideHtml, /og-v2\.png/);
 
   const areaResponse = await render("/unit/area");
