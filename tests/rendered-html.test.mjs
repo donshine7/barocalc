@@ -104,7 +104,10 @@ test("server-renders the expanded unit converters", async () => {
 test("server-renders currency and Korean-to-English address tools", async () => {
   const currencyResponse = await render("/unit/currency");
   assert.equal(currencyResponse.status, 200);
-  assert.match(await currencyResponse.text(), /환율 계산기 — 달러·엔화·유로 원화 변환/);
+  const currencyHtml = await currencyResponse.text();
+  assert.match(currencyHtml, /환율 계산기 — 달러·엔화·유로 원화 변환/);
+  assert.match(currencyHtml, /유로를 원화로 계산하려면 어떻게 하나요\?/);
+  assert.match(currencyHtml, /1·10·100·1,000유로/);
 
   const addressResponse = await render("/life/address");
   assert.equal(addressResponse.status, 200);
